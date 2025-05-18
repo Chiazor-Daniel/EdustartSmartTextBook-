@@ -1,45 +1,44 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
-import { Platform } from 'react-native';
+import { Stack } from 'expo-router';
+import LinearBg from '../components/LinearBg';
+import Sidebar from '../components/Sidebar';
+import ActionOverlay from '../components/ActionOverlay';
+import Header from '../components/Header';
+import { useState } from 'react';
 
-import { HapticTab } from '@/components/HapticTab';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import TabBarBackground from '@/components/ui/TabBarBackground';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
-
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+export default function RootLayout() {
+  const [sidebarVisible, setSidebarVisible] = useState(false);
+  const [actionOverlayVisible, setActionOverlayVisible] = useState(false);
 
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: false,
-        tabBarButton: HapticTab,
-        tabBarBackground: TabBarBackground,
-        tabBarStyle: Platform.select({
-          ios: {
-            // Use a transparent background on iOS to show the blur effect
-            position: 'absolute',
-          },
-          default: {},
-        }),
-      }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
-        }}
+    <LinearBg>
+      <Sidebar isVisible={sidebarVisible} onClose={() => setSidebarVisible(false)} />
+      <ActionOverlay 
+        isVisible={actionOverlayVisible} 
+        onClose={() => setActionOverlayVisible(false)} 
       />
-      <Tabs.Screen
-        name="explore"
-        options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
-        }}
+      <Header 
+        toggleSidebar={() => setSidebarVisible(!sidebarVisible)} 
+        toggleActionOverlay={() => setActionOverlayVisible(!actionOverlayVisible)} 
       />
-    </Tabs>
+      
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          animation: 'fade', // Smooth fade transition between screens
+          contentStyle: { backgroundColor: 'transparent' }
+        }}
+      >
+        <Stack.Screen name="splash" />
+        <Stack.Screen name="welcome" />
+        <Stack.Screen name="dashboard" />
+        <Stack.Screen name="subjects" />
+        <Stack.Screen name="subjects-list/[topics]" />
+        <Stack.Screen name="assessment-notification" />
+        <Stack.Screen name="join-class" />
+        <Stack.Screen name="settings" />
+        <Stack.Screen name="profile" />
+        {/* Keep your other screens */}
+      </Stack>
+    </LinearBg>
   );
 }
