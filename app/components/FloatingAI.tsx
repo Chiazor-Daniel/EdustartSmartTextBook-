@@ -1,40 +1,44 @@
-import React, { useState, useRef, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  TextInput,
-  Image,
-  ScrollView,
-  ActivityIndicator,
-  Dimensions,
-  Animated,
-} from 'react-native';
-import * as Speech from 'expo-speech';
-import { Feather, Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/store/authStore';
+import { Feather, Ionicons } from '@expo/vector-icons';
+import * as Speech from 'expo-speech';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+    ActivityIndicator,
+    Animated,
+    Dimensions,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
+
+const isLandscape = SCREEN_WIDTH > SCREEN_HEIGHT;
 
 const FloatingChat = () => {
   const { user } = useAuthStore();
   const [userInput, setUserInput] = useState('');
-  const [messages, setMessages] = useState<{text: string; isUser: boolean}[]>([]);
+  const [messages, setMessages] = useState<{text: string; isUser: boolean; id: string}[]>([]);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
   
   // Animation values
   const animValue = useRef(new Animated.Value(0)).current;
   const height = animValue.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, SCREEN_HEIGHT * 0.4], // Chat height when expanded
+    outputRange: [0, isLandscape ? SCREEN_HEIGHT * 0.9 : SCREEN_HEIGHT * 0.4],
   });
   const width = animValue.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, SCREEN_WIDTH * 0.8], // Chat width when expanded
+    outputRange: [0, SCREEN_WIDTH * 0.8],
   });
   const borderRadius = animValue.interpolate({
     inputRange: [0, 1],
@@ -46,7 +50,7 @@ const FloatingChat = () => {
   });
   const iconScale = animValue.interpolate({
     inputRange: [0, 1],
-    outputRange: [1, 0], // Icon scales down when chat expands
+    outputRange: [1, 0],
   });
 
   useEffect(() => {
@@ -58,22 +62,47 @@ const FloatingChat = () => {
 
     if (isExpanded && messages.length === 0 && user?.full_name) {
       const welcomeMessage = `Hi ${user.full_name.split(' ')[0]}, how can I help?`;
-      setMessages([{ text: welcomeMessage, isUser: false }]);
-      speak(welcomeMessage);
+      const messageId = Date.now().toString();
+      setMessages([{ text: welcomeMessage, isUser: false, id: messageId }]);
+      if (!isMuted) {
+        speak(welcomeMessage, messageId);
+      }
+    }
+
+    // Stop speech when chat is closed
+    if (!isExpanded) {
+      stopSpeech();
     }
   }, [isExpanded]);
 
-  const speak = (text: string) => {
+  const speak = (text: string, messageId: string) => {
+    if (isMuted) return;
+    
     setIsSpeaking(true);
+    setSpeakingMessageId(messageId);
     Speech.speak(text, {
-      onDone: () => setIsSpeaking(false),
-      onStopped: () => setIsSpeaking(false),
+      onDone: () => {
+        setIsSpeaking(false);
+        setSpeakingMessageId(null);
+      },
+      onStopped: () => {
+        setIsSpeaking(false);
+        setSpeakingMessageId(null);
+      },
     });
   };
 
   const stopSpeech = () => {
     Speech.stop();
     setIsSpeaking(false);
+    setSpeakingMessageId(null);
+  };
+
+  const toggleMute = () => {
+    setIsMuted(!isMuted);
+    if (isSpeaking) {
+      stopSpeech();
+    }
   };
 
   const scrollToBottom = () => {
@@ -84,7 +113,8 @@ const FloatingChat = () => {
     if (!userInput.trim()) return;
 
     const userMessage = userInput.trim();
-    setMessages(prev => [...prev, { text: userMessage, isUser: true }]);
+    const messageId = Date.now().toString();
+    setMessages(prev => [...prev, { text: userMessage, isUser: true, id: messageId }]);
     setUserInput('');
     stopSpeech();
 
@@ -105,20 +135,28 @@ const FloatingChat = () => {
 
       const data = await res.json();
       const aiReply = data?.candidates?.[0]?.content?.parts?.[0]?.text.replace(/\*/g, "") || 'Sorry, I could not understand.';
+      const aiMessageId = Date.now().toString();
       
-      setMessages(prev => [...prev, { text: aiReply, isUser: false }]);
+      setMessages(prev => [...prev, { text: aiReply, isUser: false, id: aiMessageId }]);
       setTimeout(scrollToBottom, 100);
-      speak(aiReply);
+      if (!isMuted) {
+        speak(aiReply, aiMessageId);
+      }
     } catch (err) {
-      setMessages(prev => [...prev, { text: 'Sorry, there was an error.', isUser: false }]);
+      const errorMessageId = Date.now().toString();
+      setMessages(prev => [...prev, { text: 'Sorry, there was an error.', isUser: false, id: errorMessageId }]);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <View style={styles.outerContainer}>
-      {/* Floating icon with no background */}
+    <View style={[
+      styles.outerContainer,
+      isLandscape
+        ? { left: 20, right: undefined, alignItems: 'flex-start' }
+        : { right: 20, left: undefined, alignItems: 'flex-end' }
+    ]}>
       <Animated.View style={{ transform: [{ scale: iconScale }] }}>
         <TouchableOpacity 
           onPress={() => setIsExpanded(true)}
@@ -132,7 +170,6 @@ const FloatingChat = () => {
         </TouchableOpacity>
       </Animated.View>
 
-      {/* Chat container that expands from nothing */}
       <Animated.View style={[
         styles.chatContainer,
         { 
@@ -146,9 +183,18 @@ const FloatingChat = () => {
         <View style={styles.chatContent}>
           <View style={styles.header}>
             <Text style={styles.headerText}>AI Assistant</Text>
-            <TouchableOpacity onPress={() => setIsExpanded(false)}>
-              <Ionicons name="close" size={20} color="white" />
-            </TouchableOpacity>
+            <View style={styles.headerButtons}>
+              <TouchableOpacity onPress={toggleMute} style={styles.headerButton}>
+                <Ionicons 
+                  name={isMuted ? "volume-mute" : "volume-high"} 
+                  size={20} 
+                  color="white" 
+                />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setIsExpanded(false)} style={styles.headerButton}>
+                <Ionicons name="close" size={20} color="white" />
+              </TouchableOpacity>
+            </View>
           </View>
 
           <ScrollView
@@ -156,16 +202,30 @@ const FloatingChat = () => {
             style={styles.messagesContainer}
             contentContainerStyle={styles.messagesContent}
           >
-            {messages.map((msg, i) => (
-              <View key={i} style={[
+            {messages.map((msg) => (
+              <View key={msg.id} style={[
                 styles.messageBubble,
                 msg.isUser ? styles.userBubble : styles.aiBubble
               ]}>
                 {!msg.isUser && (
-                  <Image 
-                    source={require('../../assets/robotc.png')} 
-                    style={styles.smallBotIcon}
-                  />
+                  <View style={styles.messageHeader}>
+                    <Image 
+                      source={require('../../assets/robotc.png')} 
+                      style={styles.smallBotIcon}
+                    />
+                    {!msg.isUser && (
+                      <TouchableOpacity 
+                        onPress={() => speak(msg.text, msg.id)}
+                        style={styles.speakButton}
+                      >
+                        <Ionicons 
+                          name={speakingMessageId === msg.id ? "pause" : "play"} 
+                          size={16} 
+                          color="white" 
+                        />
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 )}
                 <Text style={styles.messageText}>
                   {msg.text}
@@ -203,8 +263,7 @@ const styles = StyleSheet.create({
   outerContainer: {
     position: 'absolute',
     bottom: 20,
-    right: 20,
-    alignItems: 'flex-end',
+    zIndex: 9999,
   },
   floatingButton: {
     // No background styles - just the image
@@ -240,6 +299,14 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerButton: {
+    padding: 8,
+    marginLeft: 8,
   },
   messagesContainer: {
     flex: 1,
@@ -283,6 +350,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#333',
     paddingVertical: 4,
+  },
+  messageHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  speakButton: {
+    marginLeft: 8,
+    padding: 4,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
 });
 

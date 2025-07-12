@@ -8,13 +8,22 @@ import {
   Image,
   ScrollView,
   ActivityIndicator,
+  Dimensions,
 } from 'react-native';
 import * as Speech from 'expo-speech';
 import { Feather, FontAwesome } from '@expo/vector-icons';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSpring } from 'react-native-reanimated';
+import Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withTiming, 
+  withSpring,
+  runOnJS 
+} from 'react-native-reanimated';
 import Header from '../components/Header';
 import LinearBg from '../components/LinearBg';
 import { useAuthStore } from '@/store/authStore';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function WelcomeScreen({ navigation }: { navigation: any }) {
   const { user } = useAuthStore();
@@ -22,9 +31,15 @@ export default function WelcomeScreen({ navigation }: { navigation: any }) {
   const [messages, setMessages] = useState<Array<{ text: string, isUser: boolean }>>([]);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
+  
+  // Animation values
   const scale = useSharedValue(1);
-  const opacity = useSharedValue(0);
+  const opacity = useSharedValue(1);
+  const welcomeOpacity = useSharedValue(1);
+  const welcomeHeight = useSharedValue(80); // Initial height for welcome section
+  const robotHeight = useSharedValue(190); // Initial height for robot container
 
   useEffect(() => {
     // Animate in when component mounts
@@ -39,9 +54,33 @@ export default function WelcomeScreen({ navigation }: { navigation: any }) {
     }
   }, [user?.full_name]);
 
+  // Animate to full screen when first message is sent
+  useEffect(() => {
+    if (messages.length > 0 && !isFullScreen) {
+      // Animate welcome section and robot out
+      welcomeOpacity.value = withTiming(0, { duration: 300 });
+      welcomeHeight.value = withTiming(0, { duration: 300 });
+      robotHeight.value = withTiming(0, { duration: 300 });
+      
+      // Shrink robot
+      scale.value = withTiming(0, { duration: 300 });
+      opacity.value = withTiming(0, { duration: 300 }, () => {
+        runOnJS(setIsFullScreen)(true);
+      });
+    }
+  }, [messages]);
+
   const botAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
-    opacity: opacity.value
+    opacity: opacity.value,
+    height: robotHeight.value,
+    overflow: 'hidden',
+  }));
+
+  const welcomeAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: welcomeOpacity.value,
+    height: welcomeHeight.value,
+    overflow: 'hidden',
   }));
 
   const stopSpeech = () => {
@@ -106,26 +145,29 @@ export default function WelcomeScreen({ navigation }: { navigation: any }) {
   };
 
   return (
-    <View style={styles.content}>
-
-      <View style={styles.textContainer}>
+    <View style={styles.container}>
+      {/* Welcome section - will animate out after first message */}
+      <Animated.View style={[styles.textContainer, welcomeAnimatedStyle]}>
         <Text style={styles.title}>Welcome</Text>
         <Text style={styles.subtitle}>
           Hello {user?.full_name}. Ready to continue learning?
         </Text>
-      </View>
+      </Animated.View>
 
-      {/* Robot image centered in the screen */}
+      {/* Robot image - will animate out after first message */}
       <Animated.View style={[styles.botContainer, botAnimatedStyle]}>
         <Image source={require('../../assets/robotw.png')} style={styles.botImage} />
       </Animated.View>
 
-      {/* Chat container positioned above the input field */}
-      <View style={styles.chatContainer}>
+      {/* Chat container - will expand to full screen after first message */}
+      <View style={[styles.chatContainer, isFullScreen && styles.chatContainerFullScreen]}>
         <ScrollView
           ref={scrollViewRef}
           style={styles.chatBox}
-          contentContainerStyle={styles.chatContent}
+          contentContainerStyle={[
+            styles.chatContent,
+            isFullScreen && styles.chatContentFullScreen
+          ]}
           showsVerticalScrollIndicator={false}
         >
           {messages.map((msg, index) => (
@@ -184,6 +226,7 @@ export default function WelcomeScreen({ navigation }: { navigation: any }) {
             placeholderTextColor="#666"
             value={userInput}
             onChangeText={setUserInput}
+            onSubmitEditing={handleSend}
           />
           <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
             <Feather name="send" size={20} color="#666" />
@@ -203,18 +246,15 @@ export default function WelcomeScreen({ navigation }: { navigation: any }) {
 }
 
 const styles = StyleSheet.create({
-  content: {
+  container: {
     flex: 1,
     paddingHorizontal: 20,
-    alignItems: 'center',
-    justifyContent: 'space-between',
   },
-
   textContainer: {
     width: '100%',
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 20,
+    paddingTop: 20,
+    paddingBottom: 20,
   },
   title: {
     fontSize: 28,
@@ -229,32 +269,43 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   botContainer: {
-    width: 150,
-    height: 150,
-    // borderRadius: 75,
-    // backgroundColor: '#fff',
+    width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    alignSelf: 'center',
-    marginVertical: 20,
+    paddingVertical: 20,
   },
   botImage: {
+    width: 150,
+    height: 150,
     transform: [{ scale: 1 }],
   },
   chatContainer: {
     flex: 1,
     width: '100%',
-    backgroundColor: 'rgba(0,0,0,0.0)', // Transparent background
+    backgroundColor: 'rgba(0,0,0,0.0)',
     borderRadius: 10,
     padding: 10,
     marginBottom: 10,
     maxHeight: '40%',
   },
+  chatContainerFullScreen: {
+    maxHeight: '100%',
+    flex: 1,
+    marginTop: 0,
+    marginBottom: 10,
+  },
   chatBox: {
     flex: 1,
+    width: '100%',
   },
   chatContent: {
     paddingBottom: 10,
+    flexGrow: 1,
+  },
+  chatContentFullScreen: {
+    paddingTop: 20,
+    flexGrow: 1,
+    justifyContent: 'flex-start',
   },
   messageRow: {
     width: '100%',
@@ -272,23 +323,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 18,
     padding: 10,
-
-    // Remove maxWidth to allow bubble to fit content
   },
   userBubble: {
-    backgroundColor: 'rgba(34, 113, 177, 0.8)', // Slightly transparent blue
+    backgroundColor: 'rgba(34, 113, 177, 0.8)',
     borderTopRightRadius: 4,
   },
   aiBubble: {
-    backgroundColor: 'rgba(72, 72, 72, 0.75)', // Slightly transparent dark gray
+    backgroundColor: 'rgba(72, 72, 72, 0.75)',
     borderTopLeftRadius: 4,
     flex: 1,
     paddingRight: 20
-
   },
   messageContent: {
-    flex: 1, // Allow text content to take available space
-    flexShrink: 1, // Enable content to shrink if needed
+    flex: 1,
+    flexShrink: 1,
   },
   loadingBubble: {
     paddingVertical: 10,
@@ -329,7 +377,7 @@ const styles = StyleSheet.create({
   },
   inputWrapper: {
     width: '100%',
-    marginBottom: 20,
+    paddingBottom: 20,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -367,4 +415,3 @@ const styles = StyleSheet.create({
     height: 24,
   },
 });
-

@@ -1,38 +1,39 @@
 {
   "expo": {
-    "name": "SmartTextbook",
+    "name": "Koyika",
     "slug": "SmartTextbook",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "smarttextbook",
+    "icon": "./assets/logon.png",
+    "scheme": "koyika",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.chiazordaniel.Koyika"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/logon.png",
+        "backgroundColor": "#1E293B"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.chiazordaniel.SmartTextbook"
+      "package": "com.chiazordaniel.Koyika"
     },
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/logon.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/logon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "backgroundColor": "#1E293B"
         }
       ]
     ],
@@ -44,6 +45,7 @@
       "eas": {
         "projectId": "8742ef39-c303-4dcc-ae8f-3963b9e66e4a"
       }
-    }
+    },
+    "owner": "chiazordaniel"
   }
 }

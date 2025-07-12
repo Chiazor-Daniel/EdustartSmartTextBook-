@@ -1,118 +1,51 @@
-import React, { useState, useRef, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Animated,
-  Keyboard,
-  Dimensions,
-  PanResponder,
-  ActivityIndicator
-} from 'react-native';
+import { useSignupMutation } from '@/services/api';
+import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Feather } from '@expo/vector-icons';
-import LinearBg from '../components/LinearBg';
-import { useSignupMutation } from '@/services/api';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Image,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import Toast from 'react-native-toast-message';
+import LinearBg from '../components/LinearBg';
 
-const windowHeight = Dimensions.get('window').height;
-
-export default function AuthScreen() {
+export default function SignupScreen() {
   const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+const [gender, setGender] = useState('');
+const [email, setEmail] = useState('');
+const [password, setPassword] = useState('');
+const [confirmPassword, setConfirmPassword] = useState('');
+const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Animated values
-  const formHeight = useRef(new Animated.Value(400)).current;
-  const topSectionOpacity = useRef(new Animated.Value(1)).current;
-  const imageTranslateY = useRef(new Animated.Value(0)).current;
-  const scrollY = useRef(new Animated.Value(0)).current;
+  const [signup] = useSignupMutation();
 
-  // Signup mutation hook with isLoading
-  const [signup, { isLoading }] = useSignupMutation();
-
-  // Pan responder for drag gestures  
-  const panResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_, gestureState) => {
-        return Math.abs(gestureState.dy) > 10;
-      },
-      onPanResponderMove: (_, gestureState) => {
-        if ((gestureState.dy < 0 && formHeight._value < 600) ||
-            (gestureState.dy > 0 && formHeight._value > 400)) {
-          const newHeight = Math.max(400, Math.min(600, formHeight._value - gestureState.dy));
-          formHeight.setValue(newHeight);
-
-          const progress = (newHeight - 400) / 200;
-          topSectionOpacity.setValue(1 - progress);
-          
-          if (!keyboardVisible) {
-            imageTranslateY.setValue(-150 * progress);
-          }
-        }
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        const expand = gestureState.dy < 0;
-        animateFormState(expand);
-      },
-    })
-  ).current;
-
-  // Effect for keyboard events
   useEffect(() => {
     const keyboardWillShowListener = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-      () => {
-        setKeyboardVisible(true);
-        animateFormState(true, true);
-      }
+      () => setKeyboardVisible(true)
     );
-
     const keyboardWillHideListener = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
-      () => {
-        setKeyboardVisible(false);
-        animateFormState(false);
-      }
+      () => setKeyboardVisible(false)
     );
-
     return () => {
       keyboardWillShowListener.remove();
       keyboardWillHideListener.remove();
     };
   }, []);
-
-  // Animation function
-  const animateFormState = (expand, isKeyboard = false) => {
-    Animated.parallel([
-      Animated.timing(formHeight, {
-        toValue: expand ? 600 : 400,
-        duration: 300,
-        useNativeDriver: false
-      }),
-      Animated.timing(topSectionOpacity, {
-        toValue: expand ? 0 : 1,
-        duration: 300,
-        useNativeDriver: false
-      }),
-      Animated.timing(imageTranslateY, {
-        toValue: expand ? (isKeyboard ? 300 : -150) : 0,
-        duration: 300,
-        useNativeDriver: false
-      })
-    ]).start();
-  };
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -120,8 +53,7 @@ export default function AuthScreen() {
   };
 
   const handleSignUp = async () => {
-    // Validate required fields
-    if (!fullName || !email || !password || !confirmPassword) {
+    if (!fullName || !gender || !email || !password || !confirmPassword) {
       Toast.show({
         type: 'error',
         text1: 'Error',
@@ -129,8 +61,6 @@ export default function AuthScreen() {
       });
       return;
     }
-
-    // Validate email format
     if (!validateEmail(email)) {
       Toast.show({
         type: 'error',
@@ -139,8 +69,6 @@ export default function AuthScreen() {
       });
       return;
     }
-
-    // Validate email length
     if (email.length > 254) {
       Toast.show({
         type: 'error',
@@ -149,8 +77,6 @@ export default function AuthScreen() {
       });
       return;
     }
-
-    // Validate full name length
     if (fullName.length > 255) {
       Toast.show({
         type: 'error',
@@ -159,8 +85,6 @@ export default function AuthScreen() {
       });
       return;
     }
-
-    // Validate password match
     if (password !== confirmPassword) {
       Toast.show({
         type: 'error',
@@ -169,8 +93,6 @@ export default function AuthScreen() {
       });
       return;
     }
-
-    // Validate password requirements
     const passwordRegex = /^(?=.*[A-Z])(?=.*\d).{6,}$/;
     if (!passwordRegex.test(password)) {
       Toast.show({
@@ -180,98 +102,83 @@ export default function AuthScreen() {
       });
       return;
     }
-
+    setIsLoading(true);
     try {
-      const response = await signup({
+      const signupData = {
         email,
         full_name: fullName,
+        gender,
         password,
-        confirm_password: confirmPassword,
-        user_type: 'student',
-        is_active: true,
-        phone_number: '',
-        gender: '',
-      }).unwrap();
-
-      console.log('Signup Response:', response);
-
+        confirm_password: confirmPassword
+      };
+      console.log('POST https://api.class-fi.com/organization/users/signup/student/', signupData);
+      const response = await signup(signupData).unwrap();
       Toast.show({
         type: 'success',
         text1: 'Account created successfully!',
         text2: 'Please check your email to verify your account',
       });
-
-      // Navigate to login after successful signup
       setTimeout(() => {
         router.replace('/(auth)/login');
       }, 2000);
     } catch (error: any) {
-      console.log('Signup Error:ww', error);
-
+      console.log('Signup Error:', error);
+      let errorMessage = 'Signup failed. Please try again.';
+      if (error && typeof error === 'object' && error !== null) {
+        if (error.data && error.data.message) {
+          errorMessage = error.data.message;
+        } else if (error.data && error.data.errors) {
+          errorMessage = Object.values(error.data.errors).join('\n');
+        }
+      }
       Toast.show({
         type: 'error',
         text1: 'Signup Error',
-        text2: error.data.email[0]
+        text2: errorMessage,
       });
-
-     
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <LinearBg>
-      <View style={styles.container}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
         <StatusBar style="light" />
         <Toast />
-
-        <ScrollView 
+        <KeyboardAwareScrollView
           contentContainerStyle={styles.scrollContainer}
-          scrollEnabled={!keyboardVisible}
-          scrollEventThrottle={16}
-          onScroll={Animated.event(
-            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-            { useNativeDriver: false }
-          )}
+          extraScrollHeight={20}
+          enableOnAndroid={true}
+          scrollEnabled={true}
         >
-          <Animated.View style={[
+          <View style={[
             styles.topSection,
-            { opacity: topSectionOpacity }
+            keyboardVisible && { height: 120, opacity: 0.6 }
           ]}>
             <View style={styles.textContainer}>
               <Text style={styles.title}>Unlock Your Potential With</Text>
               <Text style={styles.boldTitle}>Our Interactive Textbook.</Text>
-              
-              <Text style={styles.subtitle}>
-                Discover a smarter way to learn with interactive textbooks for a 21st-century education.
-              </Text>
+              {!keyboardVisible && (
+                <Text style={styles.subtitle}>
+                  Discover a smarter way to learn with interactive textbooks for a 21st-century education.
+                </Text>
+              )}
             </View>
-          </Animated.View>
-          
-          <Animated.Image 
-            source={require('../../assets/signup.png')} 
+          </View>
+          <Image
+            source={require('../../assets/signup.png')}
             style={[
               styles.signupImage,
-              {
-                transform: [
-                  { translateX: -100 }, 
-                  { translateY: Animated.add(180, imageTranslateY) }, 
-                  { scale: 0.9 }
-                ],
-                zIndex: keyboardVisible ? 0 : 99
-              }
-            ]} 
-          />
-          
-          <Animated.View 
-            style={[
-              styles.formSection,
-              { height: formHeight }
+              keyboardVisible && { opacity: 0 }
             ]}
-            {...panResponder.panHandlers}
-          >
+          />
+          <View style={styles.formSection}>
             <View style={styles.formHandle} />
             <Text style={styles.formTitle}>Create an Account</Text>
-            
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Full Name</Text>
               <TextInput
@@ -279,10 +186,32 @@ export default function AuthScreen() {
                 value={fullName}
                 onChangeText={setFullName}
                 placeholder=""
-                maxLength={255}
+                autoCapitalize="words"
               />
             </View>
-            
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Gender</Text>
+              <View style={styles.genderRow}>
+                <TouchableOpacity
+                  style={[styles.genderOption, gender === 'Male' && styles.genderOptionSelected]}
+                  onPress={() => setGender('Male')}
+                >
+                  <Text style={[styles.genderOptionText, gender === 'Male' && styles.genderOptionTextSelected]}>Male</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.genderOption, gender === 'Female' && styles.genderOptionSelected]}
+                  onPress={() => setGender('Female')}
+                >
+                  <Text style={[styles.genderOptionText, gender === 'Female' && styles.genderOptionTextSelected]}>Female</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.genderOption, gender === 'Other' && styles.genderOptionSelected]}
+                  onPress={() => setGender('Other')}
+                >
+                  <Text style={[styles.genderOptionText, gender === 'Other' && styles.genderOptionTextSelected]}>Other</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Email Address</Text>
               <TextInput
@@ -292,10 +221,8 @@ export default function AuthScreen() {
                 placeholder=""
                 keyboardType="email-address"
                 autoCapitalize="none"
-                maxLength={254}
               />
             </View>
-            
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Password</Text>
               <View style={styles.passwordContainer}>
@@ -306,7 +233,7 @@ export default function AuthScreen() {
                   placeholder=""
                   secureTextEntry={!showPassword}
                 />
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.eyeIcon}
                   onPress={() => setShowPassword(!showPassword)}
                 >
@@ -314,7 +241,6 @@ export default function AuthScreen() {
                 </TouchableOpacity>
               </View>
             </View>
-            
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Re-enter Password</Text>
               <View style={styles.passwordContainer}>
@@ -325,7 +251,7 @@ export default function AuthScreen() {
                   placeholder=""
                   secureTextEntry={!showConfirmPassword}
                 />
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.eyeIcon}
                   onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
@@ -333,12 +259,10 @@ export default function AuthScreen() {
                 </TouchableOpacity>
               </View>
             </View>
-            
             <Text style={styles.passwordRequirements}>
               Password must contain a <Text style={styles.bold}>capital letter</Text>, a <Text style={styles.bold}>number</Text>, and be minimum of <Text style={styles.bold}>6 characters</Text>.
             </Text>
-            
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.signupButton}
               onPress={handleSignUp}
               disabled={isLoading}
@@ -349,43 +273,34 @@ export default function AuthScreen() {
                 <Text style={styles.signupButtonText}>Sign Up</Text>
               )}
             </TouchableOpacity>
-            
             <View style={styles.loginContainer}>
               <Text style={styles.loginText}>Already have an account? </Text>
               <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
                 <Text style={styles.loginLink}>Log In</Text>
               </TouchableOpacity>
             </View>
-          </Animated.View>
-          
-          <View style={styles.robotAssistant} />
-        </ScrollView>
-      </View>
+          </View>
+        </KeyboardAwareScrollView>
+      </KeyboardAvoidingView>
     </LinearBg>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: 'transparent',
-  },
   scrollContainer: {
     flexGrow: 1,
+    justifyContent: 'space-between',
   },
   topSection: {
     padding: 20,
-    paddingTop: 80,
+    paddingTop: 60,
+    height: 200,
   },
   textContainer: {
     marginBottom: 20,
   },
   title: {
-    fontSize: 24,
-    color: 'white',
-  },
-  boldTitle: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
     color: 'white',
     marginBottom: 10,
@@ -396,17 +311,19 @@ const styles = StyleSheet.create({
     opacity: 0.8,
     lineHeight: 22,
   },
+  boldTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 10,
+  },
   formSection: {
     backgroundColor: 'white',
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     padding: 20,
     paddingTop: 30,
-    paddingBottom: 70,
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
+    paddingBottom: 40,
   },
   formHandle: {
     width: 40,
@@ -473,7 +390,7 @@ const styles = StyleSheet.create({
   loginContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginBottom: 60,
+    marginBottom: 20,
   },
   loginText: {
     color: '#666',
@@ -482,17 +399,38 @@ const styles = StyleSheet.create({
     color: '#3B82F6',
     fontWeight: 'bold',
   },
-  robotAssistant: {
-    width: 40,
-    height: 40,
-    position: 'absolute',
-    bottom: 20,
-    right: 20,
-  },
   signupImage: {
-    position: 'absolute',
-    objectFit: 'cover',
-    top: '0%',
-    left: '50%',
+    alignSelf: 'center',
+    width: 200,
+    height: 200,
+    resizeMode: 'contain',
+    marginBottom: -30,
+  },
+  genderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  genderOption: {
+    flex: 1,
+    paddingVertical: 10,
+    marginHorizontal: 4,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 8,
+    alignItems: 'center',
+    backgroundColor: 'white',
+  },
+  genderOptionSelected: {
+    backgroundColor: '#3B82F6',
+    borderColor: '#3B82F6',
+  },
+  genderOptionText: {
+    color: '#666',
+    fontSize: 16,
+  },
+  genderOptionTextSelected: {
+    color: 'white',
+    fontWeight: 'bold',
   },
 });

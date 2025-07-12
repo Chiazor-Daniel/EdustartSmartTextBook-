@@ -1,7 +1,7 @@
-import { View, Text, StyleSheet, Image, TouchableOpacity, Animated, Dimensions, SafeAreaView } from 'react-native';
-import React, { useState, useRef, useEffect } from 'react';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import React, { useEffect, useRef, useState } from 'react';
+import { Animated, Dimensions, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -9,6 +9,7 @@ const QuizScreen = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const slideAnimation = useRef(new Animated.Value(0)).current;
   const [direction, setDirection] = useState('next'); // 'next' or 'previous'
+  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
 
   const questions = [
     {
@@ -76,6 +77,13 @@ const QuizScreen = () => {
     }
   };
 
+  const handleSelectAnswer = (questionId: number, optionLabel: string) => {
+    setSelectedAnswers({
+      ...selectedAnswers,
+      [questionId]: optionLabel,
+    });
+  };
+
   // Progress indicator
   const progressPercentage = ((currentIndex + 1) / questions.length) * 100;
 
@@ -121,7 +129,14 @@ const QuizScreen = () => {
               
               <View style={styles.answersContainer}>
                 {questions[currentIndex].options.map(option => (
-                  <TouchableOpacity key={option.label} style={styles.answerButton}>
+                  <TouchableOpacity
+                    key={option.label}
+                    style={[
+                      styles.answerButton,
+                      selectedAnswers[questions[currentIndex].id] === option.label && styles.selectedAnswer
+                    ]}
+                    onPress={() => handleSelectAnswer(questions[currentIndex].id, option.label)}
+                  >
                     <Text style={styles.answerText}>{option.label}. {option.text}</Text>
                   </TouchableOpacity>
                 ))}
@@ -145,9 +160,9 @@ const QuizScreen = () => {
           
           <View style={styles.footerRight}>
             <TouchableOpacity 
-              style={[styles.nextButton, currentIndex === questions.length - 1 && styles.disabledNextButton]} 
+              style={[styles.nextButton, currentIndex === questions.length - 1 && styles.disabledNextButton]}
               onPress={handleNext}
-              disabled={currentIndex === questions.length - 1}
+              disabled={currentIndex === questions.length - 1 || !selectedAnswers[questions[currentIndex].id]}
             >
               <Text style={styles.nextButtonText}>Next</Text>
               <Feather name="chevron-right" size={18} color="white" />
@@ -298,6 +313,11 @@ const styles = StyleSheet.create({
   pageIndicator: {
     fontSize: 14,
     color: '#666',
+  },
+  selectedAnswer: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#3B82F6',
+    borderWidth: 1.5,
   }
 });
 

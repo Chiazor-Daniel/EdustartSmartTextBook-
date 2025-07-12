@@ -11,7 +11,7 @@ import {
 import { router, usePathname } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { Alert } from 'react-native';
-import { Feather, MaterialIcons } from '@expo/vector-icons';
+import { Feather, MaterialIcons, Grid } from '@expo/vector-icons';
 import { Stack } from 'expo-router';
 
 const { width } = Dimensions.get('window');
@@ -56,8 +56,14 @@ const Sidebar = ({ isVisible, onClose }: SidebarProps) => {
   const menuItems = [
    
     { 
-      icon: 'bar-chart', 
+      icon: 'grid', 
       label: 'Dashboard', 
+      path: '/home',
+      component: Feather 
+    },
+    { 
+      icon: 'bar-chart', 
+      label: 'Performance', 
       path: '/performance',
       component: Feather 
     },

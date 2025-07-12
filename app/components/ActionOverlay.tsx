@@ -17,7 +17,7 @@ interface ActionOverlayProps {
 
 const { width, height } = Dimensions.get('window');
 
-const options = [
+export const options = [
     {
       label: 'STUDY',
       route: '/subjects-list/',

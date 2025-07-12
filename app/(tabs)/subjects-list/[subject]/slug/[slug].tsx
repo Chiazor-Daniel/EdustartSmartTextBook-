@@ -1,27 +1,28 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  ScrollView,
-  Dimensions,
-  SafeAreaView,
-  FlatList,
-  TextInput,
-  ActivityIndicator,
-  StatusBar as RNStatusBar,
-  Platform
-} from 'react-native';
-import { Feather, Ionicons } from '@expo/vector-icons';
-import { StatusBar } from 'expo-status-bar';
-import { router, useLocalSearchParams } from 'expo-router';
 import { useGetCardsQuery, useGetSubtopicsQuery } from '@/services/api';
-import WebView from 'react-native-webview';
-import { Audio } from 'expo-av';
-import * as ScreenOrientation from 'expo-screen-orientation';
 import { useUIStore } from '@/store/uiStore';
+import { Feather, Ionicons } from '@expo/vector-icons';
+import { Audio } from 'expo-av';
+import { router, useLocalSearchParams } from 'expo-router';
+import * as ScreenOrientation from 'expo-screen-orientation';
+import { StatusBar } from 'expo-status-bar';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Animated,
+  Dimensions,
+  FlatList,
+  Image,
+  Platform,
+  StatusBar as RNStatusBar,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from 'react-native';
+import WebView from 'react-native-webview';
 import FloatingAI from '../../../../components/FloatingAI';
 
 const { width, height } = Dimensions.get('window');
@@ -45,11 +46,18 @@ const SimulationScreen = () => {
   const [isWebViewReady, setIsWebViewReady] = useState(false);
   const [isLoadingModel, setIsLoadingModel] = useState(true);
   const [isWebViewMounted, setIsWebViewMounted] = useState(false);
+  const [isPanelVisible, setIsPanelVisible] = useState(false);
+  const panelAnimation = useRef(new Animated.Value(0)).current;
 
   // API calls
   const { data: subtopicsData } = useGetSubtopicsQuery({ 
     topic_id: parseInt(topicId || '1', 10) 
   });
+
+  useEffect(() => {
+    console.log(subtopicsData);
+    console.log(selectedSubtopicId);
+  }, []);
 
   const { data: cardsData, isLoading, error } = useGetCardsQuery({
     subject_id: parseInt(subjectId || '4', 10),
@@ -274,6 +282,18 @@ const SimulationScreen = () => {
     </TouchableOpacity>
   );
 
+  // Panel animation handlers
+  const togglePanel = useCallback(() => {
+    const toValue = isPanelVisible ? 0 : 1;
+    Animated.spring(panelAnimation, {
+      toValue,
+      useNativeDriver: true,
+      tension: 65,
+      friction: 11
+    }).start();
+    setIsPanelVisible(!isPanelVisible);
+  }, [isPanelVisible]);
+
   if (isLoading) return (
     <View style={styles.loadingContainer}>
       <ActivityIndicator size="large" color="#6B8AF7" />
@@ -303,36 +323,8 @@ const SimulationScreen = () => {
             ref={webviewRef}
             style={styles.fullscreenWebView}
             source={{
-              html: `
-              <!DOCTYPE html>
-              <html style="height: 100%; width: 100%; margin: 0; padding: 0; overflow: hidden;">
-              <head>
-                <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-                <style>
-                  html, body {
-                    height: 100%;
-                    width: 100%;
-                    margin: 0;
-                    padding: 0;
-                    overflow: hidden;
-                    background-color: #000;
-                  }
-                  iframe {
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    width: 100vw;
-                    height: 100vh;
-                    border: none;
-                    overflow: hidden;
-                  }
-                </style>
-              </head>
-              <body>
-                <iframe src="${currentCard.verge3d_file}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-              </body>
-              </html>
-            ` }}
+              html: getVerge3DTemplate(currentCard.verge3d_file)
+            }}
             {...webViewConfig}
           />
 
@@ -385,6 +377,147 @@ const SimulationScreen = () => {
               )}
             </View>
           </View>
+
+          {/* Sliding Panel Toggle Button */}
+          <TouchableOpacity
+            style={[
+              styles.panelToggleButton,
+              { transform: [{ translateY: panelAnimation.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, -200]
+              })}] }
+            ]}
+            onPress={togglePanel}
+          >
+            <Ionicons
+              name={isPanelVisible ? "chevron-down" : "chevron-up"}
+              size={24}
+              color="white"
+            />
+          </TouchableOpacity>
+
+          {/* Sliding Panel */}
+          <Animated.View
+            style={[
+              styles.slidingPanel,
+              {
+                transform: [{
+                  translateY: panelAnimation.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [200, 0]
+                  })
+                }]
+              }
+            ]}
+          >
+            {/* Panel Tabs */}
+            <View style={styles.panelTabs}>
+              <TouchableOpacity
+                style={[styles.panelTab, activeTab === 'Content' && styles.activePanelTab]}
+                onPress={() => setActiveTab('Content')}
+              >
+                <Ionicons name="book-outline" size={20} color="white" />
+                <Text style={styles.panelTabText}>Content</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.panelTab, activeTab === 'Topics' && styles.activePanelTab]}
+                onPress={() => setActiveTab('Topics')}
+              >
+                <Ionicons name="list-outline" size={20} color="white" />
+                <Text style={styles.panelTabText}>Content List</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.panelTab, activeTab === 'Search' && styles.activePanelTab]}
+                onPress={() => setActiveTab('Search')}
+              >
+                <Ionicons name="search-outline" size={20} color="white" />
+                <Text style={styles.panelTabText}>Search</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.panelContent}>
+              {/* Content Tab */}
+              {activeTab === 'Content' && currentCard && (
+                <View style={styles.panelTabContent}>
+                  {currentCard.content ? (
+                    <WebView
+                      originWhitelist={['*'] as string[]}
+                      source={{
+                        html: `
+                          <html>
+                          <head>
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                            <style>
+                              body {
+                                font-family: system-ui, -apple-system, sans-serif;
+                                padding: 16px;
+                                color: white;
+                                background-color: #121212;
+                                font-size: 16px;
+                                line-height: 1.5;
+                              }
+                              p { margin-bottom: 16px; }
+                              strong { color: #6B8AF7; }
+                              table { border-collapse: collapse; margin: 16px 0; width: 100%; }
+                              td, th { border: 1px solid #334155; padding: 8px; }
+                              th { background-color: #1E293B; }
+                            </style>
+                          </head>
+                          <body>
+                            ${currentCard.content}
+                          </body>
+                          </html>
+                        `
+                      }}
+                      style={{ height: height * 0.6, backgroundColor: '#121212' }}
+                    />
+                  ) : (
+                    <View style={styles.noContentContainer}>
+                      <Text style={styles.noContentText}>No content available for this topic</Text>
+                    </View>
+                  )}
+                </View>
+              )}
+
+              {/* Topics Tab */}
+              {activeTab === 'Topics' && subtopicsData && (
+                <View style={styles.panelTabContent}>
+                  {subtopicsData.results.map((subtopic: Subtopic) => (
+                    <TouchableOpacity
+                      key={subtopic.id}
+                      style={[
+                        styles.topicItem,
+                        selectedSubtopicId === subtopic.id && styles.activeTopicItem
+                      ]}
+                      onPress={() => handleSubtopicSelect(subtopic.id)}
+                    >
+                      <View style={styles.playButton}>
+                        <Ionicons name="play" size={16} color="white" />
+                      </View>
+                      <Text style={styles.topicText}>{subtopic.title}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+
+              {/* Search Tab */}
+              {activeTab === 'Search' && (
+                <View style={styles.panelTabContent}>
+                  <View style={styles.searchInputContainer}>
+                    <Feather name="search" size={20} color="#64748B" style={styles.searchIcon} />
+                    <TextInput
+                      style={styles.searchInput}
+                      placeholder="Search content"
+                      placeholderTextColor="#64748B"
+                    />
+                  </View>
+                  <Text style={styles.searchHint}>Type to search for topics and content</Text>
+                </View>
+              )}
+            </ScrollView>
+          </Animated.View>
         </View>
       )}
 
@@ -516,7 +649,7 @@ const SimulationScreen = () => {
             <View style={styles.contentContainer}>
               {currentCard.content ? (
                 <WebView
-                  originWhitelist={['*']}
+                  originWhitelist={['*'] as string[]}
                   source={{
                     html: `
                       <html>
@@ -557,7 +690,7 @@ const SimulationScreen = () => {
           {/* Topics List */}
           {activeTab === 'Topics' && subtopicsData && (
             <ScrollView style={styles.topicsContainer}>
-              {subtopicsData.results.map((subtopic) => (
+              {subtopicsData.results.map((subtopic: Subtopic) => (
                 <TouchableOpacity
                   key={subtopic.id}
                   style={[
@@ -589,9 +722,9 @@ const SimulationScreen = () => {
               <Text style={styles.searchHint}>Type to search for topics and content</Text>
             </View>
           )}
+          <FloatingAI />
         </>
       )}
-      <FloatingAI />
     </SafeAreaView>
   );
 };
@@ -619,6 +752,7 @@ const styles = StyleSheet.create({
     zIndex: 1000,
     backgroundColor: '#000',
     paddingTop: 0,
+    position: 'relative',
   },
   floatingControlsContainer: {
     position: 'absolute',
@@ -970,6 +1104,59 @@ const styles = StyleSheet.create({
     padding: 4,
     fontSize: 12,
     textAlign: 'center',
+  },
+  panelToggleButton: {
+    position: 'absolute',
+    left: '50%',
+    bottom: 0,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1002,
+    transform: [{ translateX: -20 }],
+  },
+  slidingPanel: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 200,
+    backgroundColor: '#121212',
+    zIndex: 1001,
+    borderTopWidth: 1,
+    borderTopColor: '#333',
+  },
+  panelContent: {
+    flex: 1,
+  },
+  panelTabContent: {
+    flex: 1,
+    padding: 16,
+  },
+  panelTabs: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+    backgroundColor: '#1E293B',
+  },
+  panelTab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    gap: 4,
+  },
+  activePanelTab: {
+    backgroundColor: 'rgba(107, 138, 247, 0.2)',
+  },
+  panelTabText: {
+    color: 'white',
+    fontSize: 12,
+    marginLeft: 4,
   },
 });
 

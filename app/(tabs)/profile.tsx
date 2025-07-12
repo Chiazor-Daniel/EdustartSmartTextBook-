@@ -1,7 +1,7 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
-import LinearBg from '../components/LinearBg';
-import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/store/authStore';
+import { Ionicons } from '@expo/vector-icons';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import LinearBg from '../components/LinearBg';
 
 export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
@@ -53,6 +53,14 @@ export default function ProfileScreen() {
                 {user.full_name.split(' ').map(n => n[0]).join('').toUpperCase()}
               </Text>
             </View>
+            <TouchableOpacity 
+              style={styles.editIcon}
+              onPress={() => {
+                // Handle edit profile
+              }}
+            >
+              <Ionicons name="pencil" size={16} color="#fff" />
+            </TouchableOpacity>
           </View>
           
           <Text style={styles.name}>{user.full_name}</Text>
@@ -80,25 +88,8 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Action Buttons */}
-        <View style={styles.actionButtons}>
-          <TouchableOpacity 
-            style={[styles.button, styles.primaryButton]}
-            onPress={() => {
-              // Handle edit profile
-            }}
-          >
-            <Ionicons name="pencil" size={16} color="#fff" style={styles.buttonIcon} />
-            <Text style={styles.buttonText}>Edit Profile</Text>
-          </TouchableOpacity>
-          
-
-        </View>
-
         {/* Additional Options */}
         <View style={styles.optionsContainer}>
-         
-          
           <TouchableOpacity style={styles.optionItem}>
             <Ionicons name="shield-checkmark-outline" size={20} color="#94a3b8" />
             <Text style={styles.optionText}>Privacy & Security</Text>
@@ -153,6 +144,7 @@ const styles = StyleSheet.create({
   },
   avatarContainer: {
     marginBottom: 20,
+    position: 'relative',
   },
   avatar: {
     width: 120,
@@ -200,33 +192,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
   },
-  actionButtons: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    marginBottom: 20,
-  },
-  button: {
-    flex: 1,
-    height: 48,
-    borderRadius: 8,
+  editIcon: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#3b82f6',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    flexDirection: 'row',
-  },
-  primaryButton: {
-    backgroundColor: '#3b82f6',
-    marginRight: 12,
-  },
-  secondaryButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  buttonIcon: {
-    marginRight: 8,
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 14,
+    borderWidth: 2,
+    borderColor: '#fff',
   },
   optionsContainer: {
     backgroundColor: 'rgba(255, 255, 255, 0.05)',

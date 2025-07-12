@@ -17,7 +17,7 @@ const Header = ({ toggleSidebar, toggleActionOverlay }: HeaderProps) => {
   
   return (
     <>
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle="dark-content" />
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.menuButton}
@@ -47,7 +47,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 45, // Standard status bar height
+    paddingTop: 15,
     paddingBottom: 15,
     backgroundColor: 'transparent',
   },

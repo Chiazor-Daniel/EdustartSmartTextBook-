@@ -1,35 +1,34 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  Keyboard,
-  Dimensions,
-  ActivityIndicator
-} from 'react-native';
-import { router } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { Feather } from '@expo/vector-icons';
-import LinearBg from '../components/LinearBg';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useLoginMutation } from '@/services/api';
 import { useAuthStore } from '@/store/authStore';
+import { Feather } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Dimensions,
+  Image,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import Toast from 'react-native-toast-message';
+import LinearBg from '../components/LinearBg';
 
 const windowHeight = Dimensions.get('window').height;
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState('sukkepipsi@gufum.com');
-  const [password, setPassword] = useState('Tester12345');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
 
-  // Effect for keyboard events
   useEffect(() => {
     const keyboardWillShowListener = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
@@ -57,17 +56,14 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     try {
       const response = await login({ email, password }).unwrap();
-      console.log(response);
-      setAuth(response.token, response.expires_at, response.user);
+      await setAuth(response.token, response.user);
       Toast.show({
         type: 'success',
         text1: 'Login successful!',
         position: 'bottom',
-        visibilityTime: 3000,
-        autoHide: true,
+        visibilityTime: 2000,
         bottomOffset: 40,
-        onShow: () => {},
-        onHide: () => { router.replace('/performance') }
+        onHide: () => router.replace('/home')
       });
     } catch (err) {
       Toast.show({
@@ -78,7 +74,7 @@ export default function LoginScreen() {
         visibilityTime: 4000,
         bottomOffset: 40
       });
-      console.error('Login error:', err);
+      console.error('Login error:', err.message || 'invalid Credentials');
     }
   };
 
@@ -94,7 +90,9 @@ export default function LoginScreen() {
           contentContainerStyle={styles.scrollContainer}
           extraScrollHeight={20}
           enableOnAndroid={true}
-          scrollEnabled={true}
+          scrollEnabled={!keyboardVisible}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
           <View style={[
             styles.topSection,
@@ -193,7 +191,6 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingTop: 60,
     height: 200,
-    transition: '0.3s',
   },
   textContainer: {
     marginBottom: 20,
@@ -223,6 +220,15 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingTop: 30,
     paddingBottom: 40,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 5,
+    minHeight: windowHeight * 0.6,
   },
   formHandle: {
     width: 40,
@@ -276,33 +282,34 @@ const styles = StyleSheet.create({
   },
   loginButton: {
     backgroundColor: '#3B82F6',
+    padding: 15,
     borderRadius: 8,
-    paddingVertical: 15,
     alignItems: 'center',
     marginBottom: 20,
   },
   loginButtonText: {
     color: 'white',
-    fontWeight: 'bold',
     fontSize: 16,
+    fontWeight: 'bold',
   },
   signupContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginBottom: 20,
+    alignItems: 'center',
   },
   signupText: {
     color: '#666',
+    fontSize: 14,
   },
   signupLink: {
     color: '#3B82F6',
+    fontSize: 14,
     fontWeight: 'bold',
   },
   loginImage: {
-    alignSelf: 'center',
-    width: 200,
+    width: '100%',
     height: 200,
     resizeMode: 'contain',
-    marginBottom: -30,
+    marginVertical: 20,
   },
 });

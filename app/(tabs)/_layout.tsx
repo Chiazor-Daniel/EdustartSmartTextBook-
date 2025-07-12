@@ -28,14 +28,11 @@ export default function RootLayout() {
           contentStyle: { backgroundColor: 'transparent' }
         }}
       >
-        <Stack.Screen name="splash" />
         <Stack.Screen name="welcome" />
         <Stack.Screen name="dashboard" />
-        <Stack.Screen name="subjects" />
-        <Stack.Screen name="subjects-list/[topics]" />
+        <Stack.Screen name="subjects-list/[subject]" />
         <Stack.Screen name="assessment-notification" />
         <Stack.Screen name="join-class" />
-        <Stack.Screen name="settings" />
         <Stack.Screen name="profile" />
         {/* Keep your other screens */}
       </Stack>

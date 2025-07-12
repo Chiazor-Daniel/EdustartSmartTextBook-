@@ -1,17 +1,16 @@
-import React, { useState, useRef, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  ScrollView,
-  Dimensions,
-  SafeAreaView,
-  Animated,
-  Easing,
-} from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+    Animated,
+    Dimensions,
+    Easing,
+    Image,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
+} from 'react-native';
 
 const { width } = Dimensions.get('window');
 

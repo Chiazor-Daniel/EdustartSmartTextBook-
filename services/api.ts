@@ -108,14 +108,14 @@ export const api = createApi({
   endpoints: (builder) => ({
     signup: builder.mutation<{ detail: string }, SignUpRequest>({
       query: (userData) => ({
-        url: 'organization/users/signup/',
+        url: '/organization/users/signup/student/',
         method: 'POST',
         body: userData,
       }),
     }),
     login: builder.mutation<LoginResponse, LoginRequest>({
       query: (credentials) => ({
-        url: 'organization/users/login/',
+        url: 'organization/users/student-login/',
         method: 'POST',
         body: credentials,
       }),
