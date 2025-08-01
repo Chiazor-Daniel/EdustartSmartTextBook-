@@ -55,7 +55,8 @@ export default function SubjectsScreen() {
   );
 
   return (
-      <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <SafeAreaView style={styles.safeArea}>
         <StatusBar barStyle="light-content" />
         {/* Title */}
         <Text style={styles.title}>Subjects</Text>
@@ -118,13 +119,15 @@ export default function SubjectsScreen() {
             }
           />
         )}
-      </SafeAreaView>
+        </SafeAreaView>
+      </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#F8F9FA',
   },
   safeArea: {
     flex: 1,
@@ -160,16 +163,21 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: 'white',
+    color: '#2C3E50',
     marginBottom: 20,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'white',
     borderRadius: 12,
     paddingHorizontal: 12,
     marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   searchIcon: {
     marginRight: 8,
@@ -177,7 +185,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     height: 46,
-    color: 'white',
+    color: '#2C3E50',
     fontSize: 16,
   },
   listContainer: {
@@ -186,16 +194,21 @@ const styles = StyleSheet.create({
   subjectCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: 'white',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   subjectIconContainer: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(107, 138, 247, 0.2)',
+    backgroundColor: '#E8F4FD',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
@@ -216,7 +229,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: '#94A3B8',
+    color: '#8E8E93',
   },
   errorContainer: {
     flex: 1,
@@ -247,7 +260,7 @@ const styles = StyleSheet.create({
   emptyText: {
     marginTop: 12,
     fontSize: 16,
-    color: '#94A3B8',
+    color: '#8E8E93',
   },
   subjectInfo: {
     flex: 1,
@@ -255,12 +268,12 @@ const styles = StyleSheet.create({
   subjectName: {
     fontSize: 18,
     fontWeight: '600',
-    color: 'white',
+    color: '#2C3E50',
     marginBottom: 4,
   },
   subjectTopics: {
     fontSize: 14,
-    color: '#94A3B8',
+    color: '#8E8E93',
   },
   arrowContainer: {
     padding: 4,

@@ -9,7 +9,8 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
+  ScrollView
 } from 'react-native';
 import Svg, { Circle, G } from 'react-native-svg';
 
@@ -18,45 +19,47 @@ const { width } = Dimensions.get('window');
 const dashboardCards = [
   {
     key: 'study',
-    title: 'STUDY',
+    title: 'Study Now',
     iconType: 'study',
+    color: '#FF6B6B',
     onPress: (navigation: any) => router.push('/subjects-list'),
   },
   {
     key: 'test',
-    title: 'TAKE A TEST',
+    title: 'Take a test',
     iconType: 'test',
+    color: '#4ECDC4',
     onPress: (navigation: any) => router.push('/examwise'),
   },
   {
-    key: 'metrics',
-    title: 'PERFORMANCE\nMETRICS',
-    iconType: 'metrics',
-    onPress: (navigation: any) => router.push('/performance'),
-  },
-  {
     key: 'class',
-    title: 'JOIN A CLASS',
+    title: 'Join a Class',
     iconType: 'class',
+    color: '#45B7D1',
     onPress: (navigation: any) => router.push('/join-class'),
   },
-
+  {
+    key: 'metrics',
+    title: 'Performance Metrics',
+    iconType: 'metrics',
+    color: '#96CEB4',
+    onPress: (navigation: any) => router.push('/performance'),
+  },
 ];
 
 const HomeScreen = ({ navigation }: { navigation: any }) => {
-  const [streakDays] = useState(234);
+  const [streakDays] = useState(320);
   const { user } = useAuthStore();
   const [bestStreak] = useState(320);
-  const streakPercentage = 75; // Based on the visual in the image
+  const streakPercentage = 75;
 
   // Circular progress component for streak
-  const CircularProgress = ({ percentage, size, strokeWidth, text, subtext, goal }: {
+  const CircularProgress = ({ percentage, size, strokeWidth, text, subtext }: {
     percentage: number;
     size: number;
     strokeWidth: number;
     text: string;
     subtext?: string;
-    goal?: string;
   }) => {
     const radius = (size - strokeWidth) / 2;
     const circumference = radius * 2 * Math.PI;
@@ -70,7 +73,7 @@ const HomeScreen = ({ navigation }: { navigation: any }) => {
               cx={size/2}
               cy={size/2}
               r={radius}
-              stroke="rgba(255, 255, 255, 0.2)"
+              stroke="#E8E8E8"
               strokeWidth={strokeWidth}
               fill="transparent"
             />
@@ -78,7 +81,7 @@ const HomeScreen = ({ navigation }: { navigation: any }) => {
               cx={size/2}
               cy={size/2}
               r={radius}
-              stroke="#60A5FA"
+              stroke="#4A90E2"
               strokeWidth={strokeWidth}
               fill="transparent"
               strokeDasharray={circumference}
@@ -95,102 +98,135 @@ const HomeScreen = ({ navigation }: { navigation: any }) => {
     );
   };
 
-  // Placeholder component for detailed illustrations
-  const IllustrationIcon = ({ type }: { type: string }) => {
+  const IllustrationIcon = ({ type, color }: { type: string; color: string }) => {
     const iconStyle = {
-      width: 60,
-      height: 60,
-      borderRadius: 30,
-      backgroundColor: 'rgba(255, 255, 255, 0.1)',
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginBottom: 8,
+      width: 50,
+      height: 50,
+      borderRadius: 25,
+      backgroundColor: color,
+      justifyContent: 'center' as const,
+      alignItems: 'center' as const,
+      marginBottom: 12,
     };
 
     switch (type) {
       case 'study':
         return (
-          <View style={styles.iconStyle}>
-            <MaterialCommunityIcons name="book-open-page-variant" size={32} color="#60A5FA" />
-            <View style={styles.iconOverlay}>
-              <Ionicons name="library" size={16} color="white" />
-            </View>
+          <View style={iconStyle}>
+            <MaterialCommunityIcons name="book-open-page-variant" size={28} color="white" />
           </View>
         );
       case 'test':
         return (
-          <View style={styles.iconStyle}>
-            <MaterialCommunityIcons name="file-document-edit" size={32} color="#60A5FA" />
-            <View style={styles.iconOverlay}>
-              <Ionicons name="checkmark-circle" size={16} color="white" />
-            </View>
+          <View style={iconStyle}>
+            <MaterialCommunityIcons name="file-document-edit" size={28} color="white" />
           </View>
         );
       case 'metrics':
         return (
-          <View style={styles.iconStyle}>
-            <MaterialCommunityIcons name="chart-line" size={32} color="#60A5FA" />
-            <View style={styles.iconOverlay}>
-              <MaterialCommunityIcons name="chart-bar" size={16} color="white" />
-            </View>
+          <View style={iconStyle}>
+            <MaterialCommunityIcons name="chart-line" size={28} color="white" />
           </View>
         );
       case 'class':
         return (
-          <View style={styles.iconStyle}>
-            <MaterialCommunityIcons name="account-group" size={32} color="#60A5FA" />
-            <View style={styles.iconOverlay}>
-              <Ionicons name="videocam" size={16} color="white" />
-            </View>
+          <View style={iconStyle}>
+            <MaterialCommunityIcons name="account-group" size={28} color="white" />
           </View>
         );
       default:
-        return <View style={styles.iconStyle} />;
+        return <View style={iconStyle} />;
     }
   };
 
+  const learningProgress = [
+    { subject: 'Biology', progress: 40, color: '#4A90E2' },
+    { subject: 'Chemistry', progress: 75, color: '#7ED321' },
+    { subject: 'Physics', progress: 60, color: '#F5A623' },
+  ];
+
   return (
     <SafeAreaView style={styles.container}>
-      {/* Welcome Banner */}
-      <ImageBackground
-        source={require('../../assets/welcomebg.jpg')}
-        style={styles.welcomeBanner}
-        imageStyle={{ borderRadius: 12 }}
-      >
-        <Text style={styles.welcomeText}>Welcome, {user?.full_name}!</Text>
-      </ImageBackground>
-
-      {/* Dashboard Grid */}
-      <View style={styles.dashboardGrid}>
-        {dashboardCards.map(card => (
-          <TouchableOpacity
-            key={card.key}
-            style={styles.dashboardItem}
-            onPress={() => card.onPress(navigation)}
-            activeOpacity={0.8}
-          >
-            <IllustrationIcon type={card.iconType} />
-            <Text style={styles.itemTitle}>{card.title}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-      
-      {/* Streak Section */}
-      <View style={styles.streakSection}>
-        <Text style={styles.streakTitle}>Streak</Text>
-        
-        <View style={styles.streakContent}>
-          <CircularProgress 
-            percentage={streakPercentage} 
-            size={120} 
-            strokeWidth={8} 
-            text={streakDays.toString()} 
-            subtext="days"
-          />
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Header Card */}
+        <View style={styles.headerCard}>
+          <View style={styles.headerContent}>
+            <View>
+              <Text style={styles.headerGreeting}>Hi, {user?.full_name?.split(' ')[0] || 'Student'}!</Text>
+              <Text style={styles.headerSubtitle}>What's catching your interest today?</Text>
+            </View>
+            <View style={styles.streakBadge}>
+              <Text style={styles.streakText}>Best</Text>
+              <Text style={styles.streakNumber}>{bestStreak}</Text>
+              <Text style={styles.streakLabel}>Keep it going!</Text>
+            </View>
+          </View>
         </View>
+
+        {/* Dashboard Grid */}
+        <View style={styles.dashboardGrid}>
+          {dashboardCards.map(card => (
+            <TouchableOpacity
+              key={card.key}
+              style={styles.dashboardItem}
+              onPress={() => card.onPress(navigation)}
+              activeOpacity={0.8}
+            >
+              <IllustrationIcon type={card.iconType} color={card.color} />
+              <Text style={styles.itemTitle}>{card.title}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Learning Progress Section */}
+        <View style={styles.progressSection}>
+          <Text style={styles.sectionTitle}>Learning Progress</Text>
+          {learningProgress.map((item, index) => (
+            <View key={index} style={styles.progressItem}>
+              <View style={styles.progressInfo}>
+                <View style={[styles.progressDot, { backgroundColor: item.color }]} />
+                <Text style={styles.progressSubject}>{item.subject}</Text>
+              </View>
+              <View style={styles.progressBarContainer}>
+                <View style={styles.progressBarBg}>
+                  <View 
+                    style={[
+                      styles.progressBar, 
+                      { width: `${item.progress}%`, backgroundColor: item.color }
+                    ]} 
+                  />
+                </View>
+                <Text style={styles.progressPercentage}>{item.progress}%</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+
+        {/* Bottom Navigation Placeholder */}
+        <View style={styles.bottomNavPlaceholder} />
+      </ScrollView>
+
+      {/* Bottom Navigation */}
+      <View style={styles.bottomNavigation}>
+        <TouchableOpacity style={[styles.navItem, styles.activeNavItem]}>
+          <Ionicons name="grid" size={24} color="#4A90E2" />
+          <Text style={[styles.navText, styles.activeNavText]}>Dashboard</Text>
+        </TouchableOpacity>
         
-        <Text style={styles.bestStreak}>Best {bestStreak}</Text>
-        <Text style={styles.streakMessage}>Keep it going 💪</Text>
+        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/subjects-list')}>
+          <Ionicons name="book" size={24} color="#8E8E93" />
+          <Text style={styles.navText}>Study</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/join-class')}>
+          <Ionicons name="people" size={24} color="#8E8E93" />
+          <Text style={styles.navText}>Join Class</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/profile')}>
+          <Ionicons name="settings" size={24} color="#8E8E93" />
+          <Text style={styles.navText}>Settings</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -199,86 +235,142 @@ const HomeScreen = ({ navigation }: { navigation: any }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'transparent', // Dark blue background
-    paddingHorizontal: 20,
+    backgroundColor: '#F8F9FA',
   },
-  welcomeBanner: {
-    position: 'relative',
-    marginTop: 20,
-    marginBottom: 40,
-    paddingVertical: 16,
-    height: 70,
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    overflow: 'hidden',
+  headerCard: {
+    backgroundColor: '#4A90E2',
+    margin: 16,
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  welcomeBannerImage: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    width: '100%',
-    height: '100%',
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  welcomeText: {
-    fontSize: 18,
+  headerGreeting: {
+    fontSize: 24,
     fontWeight: 'bold',
     color: 'white',
-    textAlign: 'center',
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.8)',
+  },
+  streakBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+    minWidth: 80,
+  },
+  streakText: {
+    fontSize: 12,
+    color: 'white',
+    opacity: 0.8,
+  },
+  streakNumber: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  streakLabel: {
+    fontSize: 10,
+    color: 'white',
+    opacity: 0.8,
   },
   dashboardGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginBottom: 40,
+    paddingHorizontal: 16,
+    marginBottom: 24,
   },
   dashboardItem: {
-    width: (width - 60) / 2,
-    height: 120,
-    borderRadius: 60, // Circular items
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    justifyContent: 'center',
+    width: (width - 48) / 2,
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
     alignItems: 'center',
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  iconOverlay: {
-    position: 'absolute',
-    bottom: -2,
-    right: -2,
-    backgroundColor: 'rgba(96, 165, 250, 0.8)',
-    borderRadius: 8,
-    padding: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   itemTitle: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    color: 'white',
-    textAlign: 'center',
-    lineHeight: 13,
-    marginTop: 4,
-  },
-  streakSection: {
-    alignItems: 'center',
-    paddingVertical: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderRadius: 16,
-    marginBottom: 20,
-  },
-  streakTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: 'white',
-    marginBottom: 20,
-    alignSelf: 'flex-start',
-    marginLeft: 20,
+    color: '#2C3E50',
+    textAlign: 'center',
   },
-  streakContent: {
+  progressSection: {
+    backgroundColor: 'white',
+    margin: 16,
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2C3E50',
+    marginBottom: 16,
+  },
+  progressItem: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
+  },
+  progressInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: 100,
+  },
+  progressDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 8,
+  },
+  progressSubject: {
+    fontSize: 14,
+    color: '#2C3E50',
+    fontWeight: '500',
+  },
+  progressBarContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 16,
+  },
+  progressBarBg: {
+    flex: 1,
+    height: 8,
+    backgroundColor: '#E8E8E8',
+    borderRadius: 4,
+    marginRight: 12,
+  },
+  progressBar: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  progressPercentage: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#2C3E50',
+    width: 35,
   },
   circularTextContainer: {
     position: 'absolute',
@@ -286,33 +378,45 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   circularProgressText: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 'bold',
-    color: 'white',
+    color: '#2C3E50',
   },
   circularProgressSubtext: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
-    marginTop: 2,
+    fontSize: 12,
+    color: '#8E8E93',
   },
-  bestStreak: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.7)',
-    marginBottom: 4,
+  bottomNavPlaceholder: {
+    height: 80,
   },
-  streakMessage: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontWeight: '500',
+  bottomNavigation: {
+    flexDirection: 'row',
+    backgroundColor: 'white',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#E8E8E8',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
-  iconStyle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    justifyContent: 'center',
+  navItem: {
+    flex: 1,
     alignItems: 'center',
-    marginBottom: 8,
+    paddingVertical: 8,
+  },
+  activeNavItem: {
+    // Active state styling
+  },
+  navText: {
+    fontSize: 12,
+    color: '#8E8E93',
+    marginTop: 4,
+  },
+  activeNavText: {
+    color: '#4A90E2',
+    fontWeight: '600',
   },
 });
 

@@ -1,5 +1,4 @@
 import { Stack } from 'expo-router';
-import LinearBg from '../components/LinearBg';
 import Sidebar from '../components/Sidebar';
 import ActionOverlay from '../components/ActionOverlay';
 import Header from '../components/Header';
@@ -10,7 +9,7 @@ export default function RootLayout() {
   const [actionOverlayVisible, setActionOverlayVisible] = useState(false);
 
   return (
-    <LinearBg>
+    <View style={{ flex: 1, backgroundColor: '#F8F9FA' }}>
       <Sidebar isVisible={sidebarVisible} onClose={() => setSidebarVisible(false)} />
       <ActionOverlay 
         isVisible={actionOverlayVisible} 
@@ -36,6 +35,6 @@ export default function RootLayout() {
         <Stack.Screen name="profile" />
         {/* Keep your other screens */}
       </Stack>
-    </LinearBg>
+    </View>
   );
 }

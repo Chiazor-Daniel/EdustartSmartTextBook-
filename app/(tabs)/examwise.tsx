@@ -472,7 +472,8 @@ const ExamWiseScreen = () => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
+      <SafeAreaView style={styles.safeContainer}>
       {/* <StatusBar barStyle="dark-content" backgroundColor="" /> */}
       
       {/* Tab Navigation */}
@@ -543,18 +544,22 @@ const ExamWiseScreen = () => {
           </View>
         </SafeAreaView>
       </Modal>
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: '#F8F9FA',
+  },
+  safeContainer: {
+    flex: 1,
   },
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: 'transparent',
+    backgroundColor: '#F8F9FA',
     borderBottomWidth: 0,
     borderBottomColor: '#e0e0e0',
     paddingVertical: 10,
@@ -572,11 +577,11 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontSize: 12,
-    color: 'white',
+    color: '#2C3E50',
     marginLeft: 4,
   },
   activeTabText: {
-    color: '#2196F3',
+    color: '#4A90E2',
     fontWeight: 'bold',
   },
   tabContent: {
@@ -586,7 +591,7 @@ const styles = StyleSheet.create({
   pageTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#2C3E50',
     marginBottom: 20,
     textAlign: 'center',
   },

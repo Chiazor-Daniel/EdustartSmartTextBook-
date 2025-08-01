@@ -23,7 +23,7 @@ const Header = ({ toggleSidebar, toggleActionOverlay }: HeaderProps) => {
           style={styles.menuButton}
           onPress={toggleSidebar}
         >
-          <Feather name="menu" size={24} color="white" />
+          <Feather name="menu" size={24} color="#2C3E50" />
           <Text style={styles.menuText}>Menu</Text>
         </TouchableOpacity>
 
@@ -32,9 +32,9 @@ const Header = ({ toggleSidebar, toggleActionOverlay }: HeaderProps) => {
           onPress={toggleActionOverlay}
         >
           <View style={styles.profileIcon}>
-            <Feather name="user" size={18} color="white" />
+            <Feather name="user" size={18} color="#2C3E50" />
           </View>
-          <Feather name="chevron-down" size={16} color="white" />
+          <Feather name="chevron-down" size={16} color="#2C3E50" />
         </TouchableOpacity>
       </View>
     </>
@@ -49,14 +49,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 40,
     paddingBottom: 15,
-    backgroundColor: 'transparent',
+    backgroundColor: '#F8F9FA',
   },
   menuButton: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   menuText: {
-    color: 'white',
+    color: '#2C3E50',
     marginLeft: 5,
     fontSize: 14,
   },
@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: '#E8E8E8',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 5,
