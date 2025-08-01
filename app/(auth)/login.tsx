@@ -24,8 +24,8 @@ import LinearBg from '../components/LinearBg';
 const windowHeight = Dimensions.get('window').height;
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('danieltari873@gmail.com');
+  const [password, setPassword] = useState('Stri343ng');
   const [showPassword, setShowPassword] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
 

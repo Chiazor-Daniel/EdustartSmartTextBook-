@@ -26,7 +26,7 @@ const dashboardCards = [
     key: 'test',
     title: 'TAKE A TEST',
     iconType: 'test',
-    onPress: (navigation: any) => router.push('/assessment-notification'),
+    onPress: (navigation: any) => router.push('/examwise'),
   },
   {
     key: 'metrics',
@@ -40,6 +40,7 @@ const dashboardCards = [
     iconType: 'class',
     onPress: (navigation: any) => router.push('/join-class'),
   },
+
 ];
 
 const HomeScreen = ({ navigation }: { navigation: any }) => {
