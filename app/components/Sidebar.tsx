@@ -1,18 +1,17 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  Animated, 
-  Dimensions, 
-  Platform 
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Animated,
+  Dimensions,
+  Platform
 } from 'react-native';
 import { router, usePathname } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { Alert } from 'react-native';
-import { Feather, MaterialIcons, Grid } from '@expo/vector-icons';
-import { Stack } from 'expo-router';
+import { Feather, MaterialIcons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
 const SIDEBAR_WIDTH = width * 0.7;
@@ -27,7 +26,7 @@ const Sidebar = ({ isVisible, onClose }: SidebarProps) => {
   const translateX = React.useRef(new Animated.Value(-SIDEBAR_WIDTH)).current;
   const [mounted, setMounted] = React.useState(false);
   const { logout } = useAuthStore();
-  
+
   React.useEffect(() => {
     if (isVisible) {
       setMounted(true);
@@ -54,57 +53,57 @@ const Sidebar = ({ isVisible, onClose }: SidebarProps) => {
   };
 
   const menuItems = [
-   
-    { 
-      icon: 'grid', 
-      label: 'Dashboard', 
+
+    {
+      icon: 'home',
+      label: 'Dashboard',
       path: '/home',
-      component: Feather 
+      component: Feather
     },
-    { 
-      icon: 'bar-chart', 
-      label: 'Performance', 
+    {
+      icon: 'bar-chart',
+      label: 'Performance',
       path: '/performance',
-      component: Feather 
+      component: Feather
     },
-    { 
-      icon: 'book', 
-      label: 'Study', 
+    {
+      icon: 'book',
+      label: 'Study',
       path: '/subjects-list',
-      component: MaterialIcons 
+      component: MaterialIcons
     },
-    { 
-      icon: 'file-text', 
-      label: 'Take a test', 
+    {
+      icon: 'file-text',
+      label: 'Take a test',
       path: '/assessment-notification',
-      component: Feather 
+      component: Feather
     },
-    { 
-      icon: 'users', 
-      label: 'Join a class', 
+    {
+      icon: 'users',
+      label: 'Join a class',
       path: '/join-class',
-      component: Feather 
+      component: Feather
     },
-    { 
-      icon: 'user', 
-      label: 'Profile', 
+    {
+      icon: 'user',
+      label: 'Profile',
       path: '/profile',
-      component: Feather 
+      component: Feather
     },
-    { 
-      icon: 'chat', 
-      label: 'Talk to an AI Tutor', 
-      path: '/welcome',
-      component: MaterialIcons 
-    }
-    
-   
+    // { 
+    //   icon: 'chat', 
+    //   label: 'Talk to an AI Tutor', 
+    //   path: '/welcome',
+    //   component: MaterialIcons 
+    // }
+
+
   ];
 
   if (!mounted && !isVisible) return null;
 
   return (
-    <Animated.View 
+    <Animated.View
       style={[
         styles.container,
         {
@@ -118,9 +117,9 @@ const Sidebar = ({ isVisible, onClose }: SidebarProps) => {
         }
       ]}
     >
-      <TouchableOpacity 
-        style={styles.overlay} 
-        activeOpacity={1} 
+      <TouchableOpacity
+        style={styles.overlay}
+        activeOpacity={1}
         onPress={onClose}
       />
       <View style={styles.sidebar}>
@@ -128,7 +127,7 @@ const Sidebar = ({ isVisible, onClose }: SidebarProps) => {
           {menuItems.map((item, index) => {
             const isActive = pathname === item.path;
             const IconComponent = item.component || Feather;
-            
+
             return (
               <TouchableOpacity
                 key={index}
@@ -138,12 +137,12 @@ const Sidebar = ({ isVisible, onClose }: SidebarProps) => {
                 ]}
                 onPress={() => navigateTo(item.path)}
               >
-                <IconComponent 
-                  name={item.icon} 
-                  size={20} 
-                  color={isActive ? "#fff" : "#CBD5E1"} 
+                <IconComponent
+                  name={item.icon}
+                  size={20}
+                  color={isActive ? "#fff" : "#CBD5E1"}
                 />
-                <Text 
+                <Text
                   style={[
                     styles.menuItemText,
                     isActive && styles.activeMenuItemText
@@ -155,7 +154,7 @@ const Sidebar = ({ isVisible, onClose }: SidebarProps) => {
             );
           })}
         </View>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.logoutButton}
           onPress={() => {
             Alert.alert(
@@ -183,7 +182,7 @@ const Sidebar = ({ isVisible, onClose }: SidebarProps) => {
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
       </View>
-    </Animated.View> 
+    </Animated.View>
   );
 };
 
@@ -196,19 +195,29 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0, 0, 0, 0.0)',
   },
+
   sidebar: {
     position: 'absolute',
     top: 0,
     left: 0,
     width: SIDEBAR_WIDTH,
     height: '100%',
-    backgroundColor: '#1E293B',
+    backgroundColor: '#fff',
     paddingTop: Platform.OS === 'ios' ? 50 : 40,
     paddingHorizontal: 20,
     justifyContent: 'space-between',
     borderRightWidth: 1,
     gap: 10,
     borderRightColor: '#334155',
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+
+    elevation: 5
   },
   menuItems: {
     marginTop: 20,
@@ -227,7 +236,7 @@ const styles = StyleSheet.create({
   menuItemText: {
     marginLeft: 15,
     fontSize: 16,
-    color: '#CBD5E1',
+    color: 'grey',
   },
   activeMenuItemText: {
     color: '#FFFFFF',

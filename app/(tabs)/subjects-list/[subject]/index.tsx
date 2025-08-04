@@ -51,6 +51,19 @@ export default function TopicsScreen() {
   // Calculate actual item numbers for display (considering pagination)
   const getItemNumber = (index: number) => startIndex + index + 1;
 
+  // Get topic card color based on index for variety
+  const getTopicColor = (index: number) => {
+    const colors = [
+      '#A8E6CF', // Light green
+      '#AED6F1', // Light blue
+      '#F9E79F', // Light yellow
+      '#F8BBD9', // Light pink
+      '#D5A6BD', // Light purple
+      '#FAD5A5', // Light orange
+    ];
+    return colors[index % colors.length];
+  };
+
   const handleTopicPress = (topic) => {
     // Navigate to the topic content screen with subject and topic IDs
     router.push({
@@ -127,7 +140,7 @@ export default function TopicsScreen() {
           onPress={() => handlePageChange(currentPage - 1)}
           disabled={currentPage === 1}
         >
-          <Feather name="chevron-left" size={20} color={currentPage === 1 ? "#64748B" : "white"} />
+          <Feather name="chevron-left" size={20} color={currentPage === 1 ? "#999" : "#6B8AF7"} />
           <Text style={[styles.navButtonText, currentPage === 1 && styles.disabledButtonText]}>
             Previous
           </Text>
@@ -145,34 +158,42 @@ export default function TopicsScreen() {
           <Text style={[styles.navButtonText, currentPage === totalPages && styles.disabledButtonText]}>
             Next
           </Text>
-          <Feather name="chevron-right" size={20} color={currentPage === totalPages ? "#64748B" : "white"} />
+          <Feather name="chevron-right" size={20} color={currentPage === totalPages ? "#999" : "#6B8AF7"} />
         </TouchableOpacity>
       </View>
     );
   };
 
   const renderTopicItem = ({ item, index }: { item: any; index: number }) => (
-    <View style={styles.topicItem}>
-      <View style={styles.topicNumberContainer}>
-        <Text style={styles.topicNumber}>{getItemNumber(index).toString().padStart(2, '0')}</Text>
+    <TouchableOpacity 
+      style={[styles.topicCard, { backgroundColor: getTopicColor(getItemNumber(index) - 1) }]}
+      onPress={() => handleTopicPress(item)}
+    >
+      <View style={styles.topicContent}>
+        <View style={styles.topicNumberContainer}>
+          <Text style={styles.topicNumber}>{getItemNumber(index).toString().padStart(2, '0')}</Text>
+        </View>
+        <View style={styles.topicInfo}>
+          <Text style={styles.topicTitle}>{item.title}</Text>
+          {/* Optional: Add topic description or metadata */}
+        </View>
       </View>
-      <View style={styles.topicTitleContainer}>
-        <Text style={styles.topicTitle}>{item.title}</Text>
+      <View style={styles.topicActions}>
+        <TouchableOpacity 
+          style={styles.startButton}
+          onPress={() => handleTopicPress(item)}
+        >
+          <Feather name="play" size={16} color="white" style={styles.playIcon} />
+          <Text style={styles.startButtonText}>Start</Text>
+        </TouchableOpacity>
       </View>
-      <TouchableOpacity 
-        style={styles.startButton}
-        onPress={() => handleTopicPress(item)}
-      >
-        <Feather name="play" size={16} color="white" style={styles.playIcon} />
-        <Text style={styles.startButtonText}>Start Topic</Text>
-      </TouchableOpacity>
       
       {item.active_classes && item.active_classes.length > 0 && (
-        <View style={styles.newBadge}>
-          <Text style={styles.newBadgeText}>LIVE</Text>
+        <View style={styles.liveBadge}>
+          <Text style={styles.liveBadgeText}>LIVE</Text>
         </View>
       )}
-    </View>
+    </TouchableOpacity>
   );
 
   const renderPaginationInfo = () => {
@@ -191,24 +212,35 @@ export default function TopicsScreen() {
   };
 
   return (
+    <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar barStyle="light-content" />
+        <StatusBar barStyle="dark-content" backgroundColor="#F8F9FA" />
         
-        {/* Title and Breadcrumbs */}
+        {/* Title */}
         <Text style={styles.title}>Subjects</Text>
+        
+        {/* Breadcrumbs */}
         <View style={styles.breadcrumbs}>
-          <Text style={styles.breadcrumbText}>{subject}</Text>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Text style={styles.breadcrumbText}>{subject}</Text>
+          </TouchableOpacity>
           <Text style={styles.breadcrumbSeparator}> / </Text>
           <Text style={styles.breadcrumbCurrent}>Topic List</Text>
+          <View style={styles.colorBars}>
+            <View style={[styles.colorBar, { backgroundColor: '#FFD700' }]} />
+            <View style={[styles.colorBar, { backgroundColor: '#87CEEB' }]} />
+            <View style={[styles.colorBar, { backgroundColor: '#FFB6C1' }]} />
+            <View style={[styles.colorBar, { backgroundColor: '#98FB98' }]} />
+          </View>
         </View>
         
         {/* Search Bar */}
         <View style={styles.searchContainer}>
-          <Feather name="search" size={20} color="#64748B" style={styles.searchIcon} />
+          <Feather name="search" size={16} color="#999" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
             placeholder="Search by topic"
-            placeholderTextColor="#64748B"
+            placeholderTextColor="#999"
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
@@ -267,61 +299,38 @@ export default function TopicsScreen() {
           </View>
         )}
       </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#F8F9FA',
   },
   safeArea: {
     flex: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
   },
   contentContainer: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 10,
-    marginBottom: 20,
-  },
-  menuButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  menuText: {
-    color: 'white',
-    marginLeft: 8,
-    fontSize: 14,
-  },
-  profileButton: {
-    padding: 4,
-  },
-  profileIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 4,
+    color: '#2C3E50',
+    marginBottom: 8,
   },
   breadcrumbs: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
+    position: 'relative',
   },
   breadcrumbText: {
     fontSize: 16,
-    color: '#94A3B8',
+    color: '#6B8AF7',
+    fontWeight: '500',
   },
   breadcrumbSeparator: {
     fontSize: 16,
@@ -330,23 +339,39 @@ const styles = StyleSheet.create({
   },
   breadcrumbCurrent: {
     fontSize: 16,
-    color: '#94A3B8',
+    color: '#2C3E50',
+    fontWeight: '500',
+  },
+  colorBars: {
+    flexDirection: 'row',
+    marginLeft: 12,
+  },
+  colorBar: {
+    width: 20,
+    height: 3,
+    borderRadius: 2,
+    marginRight: 4,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 12,
-    paddingHorizontal: 12,
+    backgroundColor: 'white',
+    borderRadius: 25,
+    paddingHorizontal: 16,
     marginBottom: 20,
+    height: 50,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   searchIcon: {
-    marginRight: 8,
+    marginRight: 12,
   },
   searchInput: {
     flex: 1,
-    height: 46,
-    color: 'white',
+    color: '#2C3E50',
     fontSize: 16,
   },
   paginationInfo: {
@@ -355,38 +380,85 @@ const styles = StyleSheet.create({
   },
   paginationInfoText: {
     fontSize: 14,
-    color: '#94A3B8',
+    color: '#8E8E93',
   },
   listContainer: {
     paddingBottom: 20,
   },
-  topicItem: {
+  topicCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
     position: 'relative',
   },
+  topicContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
   topicNumberContainer: {
-    width: 36,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 16,
   },
   topicNumber: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#94A3B8',
+    color: '#2C3E50',
   },
-  topicTitleContainer: {
+  topicInfo: {
     flex: 1,
   },
   topicTitle: {
-    fontSize: 16,
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#2C3E50',
+    marginBottom: 4,
+  },
+  topicActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  startButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#6B8AF7',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  playIcon: {
+    marginRight: 4,
+  },
+  startButtonText: {
     color: 'white',
+    fontSize: 14,
     fontWeight: '500',
+  },
+  liveBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: '#F59E0B',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  liveBadgeText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: 'bold',
   },
   loadingContainer: {
     flex: 1,
@@ -396,7 +468,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: '#94A3B8',
+    color: '#8E8E93',
   },
   errorContainer: {
     flex: 1,
@@ -427,37 +499,7 @@ const styles = StyleSheet.create({
   emptyText: {
     marginTop: 12,
     fontSize: 16,
-    color: '#94A3B8',
-  },
-  startButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#6B8AF7',
-    borderRadius: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
-  playIcon: {
-    marginRight: 4,
-  },
-  startButtonText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  newBadge: {
-    position: 'absolute',
-    bottom: -6,
-    right: 16,
-    backgroundColor: '#F59E0B',
-    borderRadius: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  newBadgeText: {
-    color: 'white',
-    fontSize: 10,
-    fontWeight: 'bold',
+    color: '#8E8E93',
   },
   // Pagination Styles
   paginationContainer: {
@@ -470,23 +512,28 @@ const styles = StyleSheet.create({
   navButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'white',
     borderRadius: 8,
     paddingVertical: 10,
     paddingHorizontal: 12,
     minWidth: 80,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   disabledButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: '#F1F5F9',
   },
   navButtonText: {
-    color: 'white',
+    color: '#6B8AF7',
     fontSize: 14,
     fontWeight: '500',
     marginHorizontal: 4,
   },
   disabledButtonText: {
-    color: '#64748B',
+    color: '#999',
   },
   pageNumbers: {
     flexDirection: 'row',
@@ -498,16 +545,21 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'white',
     justifyContent: 'center',
     alignItems: 'center',
     marginHorizontal: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   activePageButton: {
     backgroundColor: '#6B8AF7',
   },
   pageButtonText: {
-    color: '#94A3B8',
+    color: '#64748B',
     fontSize: 14,
     fontWeight: '500',
   },

@@ -5,8 +5,6 @@ import { Feather, Ionicons } from '@expo/vector-icons';
 import { router, Router, useLocalSearchParams } from 'expo-router';
 import { useGetSubjectsQuery } from '@/services/api';
 
-
-
 export default function SubjectsScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
@@ -31,42 +29,98 @@ export default function SubjectsScreen() {
     });
   };
 
+  // Get subject card color based on subject name
+  const getSubjectColor = (title) => {
+    const colors = {
+      'Biology': '#A8E6CF',
+      'Chemistry': '#AED6F1',
+      'Physics': '#F9E79F',
+      'Mathematics': '#F8BBD9',
+      'English': '#D5A6BD',
+      'History': '#FAD5A5',
+    };
+    return colors[title] || '#E8F4FD';
+  };
+
+  // Get subject icon based on subject name
+  const getSubjectIcon = (title) => {
+    const icons = {
+      'Biology': '🧬',
+      'Chemistry': '⚗️',
+      'Physics': '⚛️',
+      'Mathematics': '📊',
+      'English': '📝',
+      'History': '📜',
+    };
+    return icons[title] || '📚';
+  };
 
   const renderSubjectItem = ({ item }) => (
     <TouchableOpacity 
-      style={[styles.subjectCard, { borderLeftColor: item.color || '#6B8AF7', borderLeftWidth: 4 }]}
+      style={[styles.subjectCard, { backgroundColor: getSubjectColor(item.title) }]}
       onPress={() => handleSubjectPress(item)}
     >
-      <View style={styles.subjectIconContainer}>
-        {item.image ? (
-          <Image source={{ uri: item.image }} style={styles.subjectImage} resizeMode="contain" />
-        ) : (
-          <Text style={styles.subjectIcon}>📚</Text>
-        )}
-      </View>
-      <View style={styles.subjectInfo}>
-        <Text style={styles.subjectName}>{item.title}</Text>
-        <Text style={styles.subjectTopics}>{item.content}</Text>
+      <View style={styles.subjectContent}>
+        <View style={styles.subjectIconContainer}>
+          {item.image ? (
+            item.title === 'Biology' ? (
+              <Image source={require('@/assets/bio.png')} style={styles.subjectImage} resizeMode="contain" />
+            ) 
+            : item.title === 'Chemistry' ? (
+              <Image source={require('@/assets/chem.png')} style={styles.subjectImage} resizeMode="contain" />
+            )
+            : item.title === 'Physics' ? (
+              <Image source={require('@/assets/phy.png')} style={styles.subjectImage} resizeMode="contain" />
+            )
+            : (
+              <Image source={{ uri: item.image }} style={styles.subjectImage} resizeMode="contain" />
+            )
+          ) : (
+            <Text style={styles.subjectIcon}>{getSubjectIcon(item.title)}</Text>
+          )}
+        </View>
+        <View style={styles.subjectInfo}>
+          <Text style={styles.subjectName}>{item.title}</Text>
+          {/* <Text style={styles.subjectTopics}>
+            {item.lesson_count || '0'} lessons
+          </Text> */}
+        </View>
       </View>
       <View style={styles.arrowContainer}>
-        <Feather name="chevron-right" size={24} color="#6B8AF7" />
+        <Feather name="chevron-right" size={20} color="#666" />
       </View>
     </TouchableOpacity>
   );
 
   return (
+    <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar barStyle="light-content" />
+        <StatusBar barStyle="dark-content" backgroundColor="#F8F9FA" />
+        
         {/* Title */}
         <Text style={styles.title}>Subjects</Text>
         
+        {/* Motivational Header */}
+        <View style={styles.motivationalHeader}>
+          <Text style={styles.motivationalText}>
+            What are you going to <Text style={styles.studyText}>study</Text>
+          </Text>
+          <Text style={styles.motivationalText}>today ?</Text>
+          <View style={styles.colorBars}>
+            <View style={[styles.colorBar, { backgroundColor: '#FFD700' }]} />
+            <View style={[styles.colorBar, { backgroundColor: '#87CEEB' }]} />
+            <View style={[styles.colorBar, { backgroundColor: '#FFB6C1' }]} />
+            <View style={[styles.colorBar, { backgroundColor: '#98FB98' }]} />
+          </View>
+        </View>
+        
         {/* Search Bar */}
         <View style={styles.searchContainer}>
-          <Feather name="search" size={20} color="#64748B" style={styles.searchIcon} />
+          <Feather name="search" size={16} color="#999" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search by subject"
-            placeholderTextColor="#64748B"
+            placeholder="Search by topic"
+            placeholderTextColor="#999"
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
@@ -85,7 +139,7 @@ export default function SubjectsScreen() {
           <View style={styles.errorContainer}>
             <Feather name="alert-circle" size={40} color="#EF4444" />
             <Text style={styles.errorText}>Failed to load subjects</Text>
-            <TouchableOpacity style={styles.retryButton}>
+            <TouchableOpacity style={styles.retryButton} onPress={handleRefresh}>
               <Text style={styles.retryText}>Retry</Text>
             </TouchableOpacity>
           </View>
@@ -119,16 +173,18 @@ export default function SubjectsScreen() {
           />
         )}
       </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#F8F9FA',
   },
   safeArea: {
     flex: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
   },
   header: {
     flexDirection: 'row',
@@ -142,42 +198,68 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   menuText: {
-    color: 'white',
+    color: '#2C3E50',
     marginLeft: 8,
     fontSize: 14,
+    fontWeight: '500',
   },
-  profileButton: {
-    padding: 4,
-  },
-  profileIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    justifyContent: 'center',
+  headerIcons: {
+    flexDirection: 'row',
     alignItems: 'center',
+  },
+  iconButton: {
+    marginLeft: 16,
+    padding: 4,
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: 'white',
+    color: '#2C3E50',
     marginBottom: 20,
+  },
+  motivationalHeader: {
+    marginBottom: 30,
+  },
+  motivationalText: {
+    fontSize: 22,
+    color: '#2C3E50',
+    fontWeight: '600',
+    lineHeight: 28,
+  },
+  studyText: {
+    color: '#FFA500',
+    fontWeight: 'bold',
+  },
+  colorBars: {
+    flexDirection: 'row',
+    marginTop: 12,
+  },
+  colorBar: {
+    width: 30,
+    height: 4,
+    borderRadius: 2,
+    marginRight: 8,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 12,
-    paddingHorizontal: 12,
+    backgroundColor: 'white',
+    borderRadius: 25,
+    paddingHorizontal: 16,
     marginBottom: 20,
+    height: 50,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   searchIcon: {
-    marginRight: 8,
+    marginRight: 12,
   },
   searchInput: {
     flex: 1,
-    height: 46,
-    color: 'white',
+    color: '#2C3E50',
     fontSize: 16,
   },
   listContainer: {
@@ -186,27 +268,52 @@ const styles = StyleSheet.create({
   subjectCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  subjectContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
   subjectIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(107, 138, 247, 0.2)',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
   },
   subjectIcon: {
-    fontSize: 24,
+    fontSize: 26,
   },
   subjectImage: {
     width: 40,
     height: 40,
     borderRadius: 20,
+  },
+  subjectInfo: {
+    flex: 1,
+  },
+  subjectName: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#2C3E50',
+    marginBottom: 4,
+  },
+  subjectTopics: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '500',
+  },
+  arrowContainer: {
+    padding: 4,
   },
   loadingContainer: {
     flex: 1,
@@ -216,7 +323,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: '#94A3B8',
+    color: '#8E8E93',
   },
   errorContainer: {
     flex: 1,
@@ -247,22 +354,6 @@ const styles = StyleSheet.create({
   emptyText: {
     marginTop: 12,
     fontSize: 16,
-    color: '#94A3B8',
-  },
-  subjectInfo: {
-    flex: 1,
-  },
-  subjectName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: 'white',
-    marginBottom: 4,
-  },
-  subjectTopics: {
-    fontSize: 14,
-    color: '#94A3B8',
-  },
-  arrowContainer: {
-    padding: 4,
+    color: '#8E8E93',
   },
 });

@@ -147,7 +147,7 @@ const JoinClassScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: '#fff',
   },
   content: {
     flex: 1,
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: 'white',
+    color: '#1E293B',
     textAlign: 'center',
     marginBottom: 8,
   },

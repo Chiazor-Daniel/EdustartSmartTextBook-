@@ -988,7 +988,7 @@ const PerformanceMetricsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: '#F8F9FA',
   },
   header: {
     paddingHorizontal: 20,
@@ -997,7 +997,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: 'white',
+    color: '#2C3E50',
   },
   content: {
     flex: 1,
@@ -1025,7 +1025,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#1E293B',
+    color: '#2C3E50',
     marginBottom: 16,
   },
   description: {

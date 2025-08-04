@@ -1,7 +1,6 @@
 import { useAuthStore } from '@/store/authStore';
 import { Ionicons } from '@expo/vector-icons';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import LinearBg from '../components/LinearBg';
 
 export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
@@ -32,17 +31,14 @@ export default function ProfileScreen() {
 
   if (!user) {
     return (
-      <LinearBg>
         <View style={styles.container}>
           <Text style={styles.signInText}>Please sign in to view your profile</Text>
         </View>
-      </LinearBg>
     );
   }
 
   return (
-    <LinearBg>
-      <ScrollView style={styles.container}>
+    <ScrollView style={styles.container}>
 
 
         {/* User Info */}
@@ -103,16 +99,17 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </LinearBg>
+
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#fff',
   },
   signInText: {
-    color: '#fff',
+    color: '#1E293B',
     fontSize: 16,
     textAlign: 'center',
     marginTop: 20,
@@ -125,7 +122,7 @@ const styles = StyleSheet.create({
     paddingTop: 50,
   },
   headerTitle: {
-    color: '#fff',
+    color: '#1E293B',
     fontSize: 20,
     fontWeight: '600',
   },
@@ -162,7 +159,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   name: {
-    color: '#fff',
+    color: '#1E293B',
     fontSize: 24,
     fontWeight: 'bold',
     marginTop: 16,
@@ -188,7 +185,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   infoValue: {
-    color: '#fff',
+    color: '#1E293B',
     fontSize: 16,
     fontWeight: '500',
   },
@@ -220,7 +217,7 @@ const styles = StyleSheet.create({
   },
   optionText: {
     flex: 1,
-    color: '#fff',
+    color: '#1E293B',
     fontSize: 16,
     marginLeft: 16,
   },

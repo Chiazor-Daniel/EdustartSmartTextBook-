@@ -1,27 +1,24 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useAuthStore } from '@/store/authStore';
+import { Feather, FontAwesome } from '@expo/vector-icons';
+import * as Speech from 'expo-speech';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  TextInput,
-  Image,
-  ScrollView,
   ActivityIndicator,
   Dimensions,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import * as Speech from 'expo-speech';
-import { Feather, FontAwesome } from '@expo/vector-icons';
-import Animated, { 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withTiming, 
-  withSpring,
-  runOnJS 
+import Animated, {
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming
 } from 'react-native-reanimated';
-import Header from '../components/Header';
-import LinearBg from '../components/LinearBg';
-import { useAuthStore } from '@/store/authStore';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -248,6 +245,7 @@ export default function WelcomeScreen({ navigation }: { navigation: any }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#fff',
     paddingHorizontal: 20,
   },
   textContainer: {
@@ -259,12 +257,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: 'white',
+    color: '#1E293B',
     marginBottom: 10,
   },
   subtitle: {
     fontSize: 16,
-    color: 'white',
+    color: '#1E293B',
     opacity: 0.8,
     textAlign: 'center',
   },

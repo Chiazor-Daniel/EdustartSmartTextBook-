@@ -733,11 +733,11 @@ const SimulationScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: '#1E293B',
   },
   simulationContainer: {
     height: 400,
-    backgroundColor: 'transparent',
+    backgroundColor: '#1E293B',
     borderBottomWidth: 1,
     borderBottomColor: '#333',
   },

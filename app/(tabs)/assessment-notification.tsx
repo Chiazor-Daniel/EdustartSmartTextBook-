@@ -173,7 +173,7 @@ const AssessmentNotification = ({ navigation }: { navigation: any }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: '#fff',
   },
   content: {
     flex: 1,
@@ -183,14 +183,14 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: 'white',
+    color: '#1E293B',
     marginBottom: 20,
   },
   optionsContainer: {
     flex: 1,
   },
   optionCard: {
-    backgroundColor: 'white',
+    backgroundColor: '#E5E7EB',
     borderRadius: 12,
     padding: 20,
     marginBottom: 16,

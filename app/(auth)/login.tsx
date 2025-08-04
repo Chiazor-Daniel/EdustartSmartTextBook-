@@ -19,9 +19,9 @@ import {
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import Toast from 'react-native-toast-message';
-import LinearBg from '../components/LinearBg';
 
 const windowHeight = Dimensions.get('window').height;
+const windowWidth = Dimensions.get('window').width;
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('danieltari873@gmail.com');
@@ -79,49 +79,23 @@ export default function LoginScreen() {
   };
 
   return (
-    <LinearBg>
-      <KeyboardAvoidingView 
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <StatusBar style="light" />
-        
-        <KeyboardAwareScrollView
-          contentContainerStyle={styles.scrollContainer}
-          extraScrollHeight={20}
-          enableOnAndroid={true}
-          scrollEnabled={!keyboardVisible}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={[
-            styles.topSection,
-            keyboardVisible && { height: 120, opacity: 0.6 }
-          ]}>
-            <View style={styles.textContainer}>
-              <Text style={styles.title}>Unlock Your Potential With</Text>
-              <Text style={styles.boldTitle}>Our Interactive Textbook.</Text>
+    <View style={styles.container}>
+      <StatusBar style="dark" />
+      
+      {/* Header area - space for logo */}
+      <View style={styles.headerSpace}>
+       <Image source={require('@/assets/edustart_logo.png')} />
+      </View>
 
-              {!keyboardVisible && (
-                <Text style={styles.subtitle}>
-                  Discover a smarter way to learn with interactive textbooks for a 21st-century education.
-                </Text>
-              )}
-            </View>
-          </View>
+      {/* Main content area */}
+      <View style={styles.mainContent}>
+        {/* Modal Card */}
+        <View style={styles.modalCard}>
+          <Text style={styles.mainTitle}>Login to Begin</Text>
+          <Text style={styles.subtitle}>Unlock your potential with our interactive textbook.</Text>
 
-          <Image
-            source={require('../../assets/login.png')}
-            style={[
-              styles.loginImage,
-              keyboardVisible && { opacity: 0 }
-            ]}
-          />
-
-          <View style={styles.formSection}>
-            <View style={styles.formHandle} />
-            <Text style={styles.formTitle}>Login to Begin</Text>
-
+          {/* Form */}
+          <View style={styles.formContainer}>
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Email Address</Text>
               <TextInput
@@ -153,9 +127,16 @@ export default function LoginScreen() {
               </View>
             </View>
 
-            <TouchableOpacity style={styles.forgotPassword}>
-              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-            </TouchableOpacity>
+            {/* Forgot Password with checkbox */}
+            <View style={styles.forgotPasswordContainer}>
+              <TouchableOpacity style={styles.checkboxContainer}>
+                <View style={styles.checkbox} />
+                <Text style={styles.checkboxText}>I agree to the website </Text>
+                <TouchableOpacity>
+                  <Text style={styles.linkText}>Privacy Policy & Terms of Service</Text>
+                </TouchableOpacity>
+              </TouchableOpacity>
+            </View>
 
             <TouchableOpacity
               style={styles.loginButton}
@@ -176,121 +157,168 @@ export default function LoginScreen() {
               </TouchableOpacity>
             </View>
           </View>
-        </KeyboardAwareScrollView>
-      </KeyboardAvoidingView>
-    </LinearBg>
+        </View>
+      </View>
+      <Image source={require('@/assets/login2.png')} style={{position: 'absolute', bottom:0}} />
+      <Image source={require('@/assets/top.png')} style={{position: 'absolute', top:0}} />
+
+      {/* Bottom space for illustration */}
+      <View style={styles.bottomSpace} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollContainer: {
-    flexGrow: 1,
-    justifyContent: 'space-between',
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    position: 'relative',
   },
-  topSection: {
-    padding: 20,
-    paddingTop: 60,
-    height: 200,
+  headerSpace: {
+    height: windowHeight * 0.15,
+    paddingTop: 150,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  textContainer: {
-    marginBottom: 20,
+  logoContainer: {
+    alignItems: 'flex-start',
   },
-  title: {
-    fontSize: 28,
+  logoCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#E3F2FD',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  logoText: {
+    fontSize: 12,
+    color: '#2196F3',
     fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 10,
   },
-  subtitle: {
-    fontSize: 16,
-    color: 'white',
-    opacity: 0.8,
-    lineHeight: 22,
+  mainContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
   },
-  boldTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 10,
-  },
-  formSection: {
-    backgroundColor: 'white',
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    padding: 20,
-    paddingTop: 30,
-    paddingBottom: 40,
+  modalCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: -2,
+      height: 4,
     },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 5,
-    minHeight: windowHeight * 0.6,
+    shadowRadius: 20,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
   },
-  formHandle: {
-    width: 40,
-    height: 5,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 2.5,
-    alignSelf: 'center',
-    marginBottom: 15,
-  },
-  formTitle: {
-    fontSize: 22,
+  mainTitle: {
+    fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 20,
+    color: '#1F2937',
+    marginBottom: 8,
     textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 32,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  formContainer: {
+    width: '100%',
   },
   inputContainer: {
     marginBottom: 20,
   },
   inputLabel: {
     fontSize: 14,
-    color: '#666',
-    marginBottom: 5,
+    color: '#374151',
+    marginBottom: 8,
+    fontWeight: '500',
   },
   input: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-    paddingVertical: 8,
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     fontSize: 16,
+    color: '#111827',
   },
   passwordContainer: {
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    paddingHorizontal: 16,
   },
   passwordInput: {
     flex: 1,
-    paddingVertical: 8,
+    paddingVertical: 14,
     fontSize: 16,
+    color: '#111827',
   },
   eyeIcon: {
     padding: 8,
   },
-  forgotPassword: {
-    alignSelf: 'flex-end',
-    marginBottom: 20,
+  forgotPasswordContainer: {
+    marginBottom: 24,
   },
-  forgotPasswordText: {
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    flexWrap: 'wrap',
+  },
+  checkbox: {
+    width: 16,
+    height: 16,
+    borderWidth: 2,
+    borderColor: '#D1D5DB',
+    borderRadius: 3,
+    marginRight: 8,
+    marginTop: 2,
+  },
+  checkboxText: {
+    fontSize: 12,
+    color: '#6B7280',
+    flex: 0,
+  },
+  linkText: {
+    fontSize: 12,
     color: '#3B82F6',
-    fontSize: 14,
+    textDecorationLine: 'underline',
   },
   loginButton: {
     backgroundColor: '#3B82F6',
-    padding: 15,
-    borderRadius: 8,
+    borderRadius: 12,
+    paddingVertical: 16,
     alignItems: 'center',
     marginBottom: 20,
+    shadowColor: '#3B82F6',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   loginButtonText: {
     color: 'white',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
   signupContainer: {
     flexDirection: 'row',
@@ -298,18 +326,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   signupText: {
-    color: '#666',
+    color: '#6B7280',
     fontSize: 14,
   },
   signupLink: {
     color: '#3B82F6',
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
-  loginImage: {
-    width: '100%',
-    height: 200,
-    resizeMode: 'contain',
-    marginVertical: 20,
+  bottomSpace: {
+    height: windowHeight * 0.15,
   },
 });

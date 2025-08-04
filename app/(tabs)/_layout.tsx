@@ -4,6 +4,7 @@ import Sidebar from '../components/Sidebar';
 import ActionOverlay from '../components/ActionOverlay';
 import Header from '../components/Header';
 import { useState } from 'react';
+import BottomNavigation from '../components/BottomNav';
 
 export default function RootLayout() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -24,18 +25,26 @@ export default function RootLayout() {
       <Stack
         screenOptions={{
           headerShown: false,
-          animation: 'fade', // Smooth fade transition between screens
-          contentStyle: { backgroundColor: 'transparent' }
+          // Use a more fluid slide animation for transitions
+          animation: 'slide_from_right',
+          gestureEnabled: true, // Enable swipe gestures for native feel
+          contentStyle: { backgroundColor: 'transparent' },
+          animationDuration: 200, // Consistent timing
         }}
       >
         <Stack.Screen name="welcome" />
-        <Stack.Screen name="dashboard" />
-        <Stack.Screen name="subjects-list/[subject]" />
+        <Stack.Screen name="home" />
+        <Stack.Screen name="performance" />
         <Stack.Screen name="assessment-notification" />
-        <Stack.Screen name="join-class" />
         <Stack.Screen name="profile" />
-        {/* Keep your other screens */}
+        <Stack.Screen name="join-class" />
+        <Stack.Screen name="subjects-list/[subject]" />
+        <Stack.Screen name="subjects-list/[subject]/slug/[slug]" />
+        <Stack.Screen name="examwise" />
+        <Stack.Screen name="examwise/[exam]/slug/[slug]" />
       </Stack>
+      <BottomNavigation />
     </LinearBg>
   );
+
 }
