@@ -1,39 +1,39 @@
 {
   "expo": {
-    "name": "Koyika",
+    "name": "edustartech",
     "slug": "SmartTextbook",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/logon.png",
-    "scheme": "koyika",
+    "icon": "./assets/logo-1-png.png",
+    "scheme": "edustartech",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.chiazordaniel.Koyika"
+      "bundleIdentifier": "com.chiazordaniel.edustartech"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/logon.png",
-        "backgroundColor": "#1E293B"
+        "foregroundImage": "./assets/logo-1-png.png",
+        "backgroundColor": "#fff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.chiazordaniel.Koyika"
+      "package": "com.chiazordaniel.edustartech"
     },
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/logon.png"
+      "favicon": "./assets/logo-1-png.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/logon.png",
+          "image": "./assets/logo-1-png.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#1E293B"
+          "backgroundColor": "#fff"
         }
       ]
     ],

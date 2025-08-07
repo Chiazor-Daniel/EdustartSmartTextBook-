@@ -2,7 +2,6 @@ import { useLoginMutation } from '@/services/api';
 import { useAuthStore } from '@/store/authStore';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -19,6 +18,7 @@ import {
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import Toast from 'react-native-toast-message';
+import { StatusBar } from 'react-native';
 
 const windowHeight = Dimensions.get('window').height;
 const windowWidth = Dimensions.get('window').width;
@@ -60,19 +60,55 @@ export default function LoginScreen() {
       Toast.show({
         type: 'success',
         text1: 'Login successful!',
-        position: 'bottom',
+        position: 'top',
         visibilityTime: 2000,
-        bottomOffset: 40,
-        onHide: () => router.replace('/home')
+        onHide: () => router.replace('/home'),
+        props: {
+          style: {
+            backgroundColor: '#22C55E',
+            borderRadius: 12,
+            padding: 16,
+            marginHorizontal: 16,
+            marginTop: 40,
+            shadowColor: '#22C55E',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.3,
+            shadowRadius: 8,
+            elevation: 4,
+          },
+          textStyle: {
+            color: '#fff',
+            fontWeight: 'bold',
+            fontSize: 16,
+          }
+        }
       });
     } catch (err) {
       Toast.show({
         type: 'error',
         text1: 'Login failed',
         text2: 'Please check your credentials',
-        position: 'bottom',
+        position: 'top',
         visibilityTime: 4000,
-        bottomOffset: 40
+        props: {
+          style: {
+            backgroundColor: '#EF4444',
+            borderRadius: 12,
+            padding: 16,
+            marginHorizontal: 16,
+            marginTop: 40,
+            shadowColor: '#EF4444',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.3,
+            shadowRadius: 8,
+            elevation: 4,
+          },
+          textStyle: {
+            color: '#fff',
+            fontWeight: 'bold',
+            fontSize: 16,
+          }
+        }
       });
       console.error('Login error:', err.message || 'invalid Credentials');
     }
@@ -80,11 +116,10 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar style="dark" />
-      
+      <StatusBar translucent={true} backgroundColor={'transparent'} />
       {/* Header area - space for logo */}
       <View style={styles.headerSpace}>
-       <Image source={require('@/assets/edustart_logo.png')} />
+       <Image source={require('@/assets/logo-1-png.png')} style={{width: 300, height: 300}}/>
       </View>
 
       {/* Main content area */}
@@ -174,6 +209,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     position: 'relative',
   },
+  
   headerSpace: {
     height: windowHeight * 0.15,
     paddingTop: 150,

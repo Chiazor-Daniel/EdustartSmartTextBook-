@@ -1,6 +1,14 @@
-// components/BottomNavigation.js
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Dimensions } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  Dimensions,
+  Platform,
+  StatusBar
+} from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { router, usePathname } from 'expo-router';
 
@@ -14,27 +22,26 @@ const BottomNavigation = () => {
       name: 'Dashboard',
       icon: 'home',
       route: '/(tabs)/home',
-      label: 'Dashboard'
+      label: 'Dashboard',
     },
     {
       name: 'Study',
       icon: 'book-open',
       route: '/(tabs)/subjects-list',
-      label: 'Study'
+      label: 'Study',
     },
-    
     {
       name: 'Join Class',
       icon: 'video',
       route: '/(tabs)/join-class',
-      label: 'Join Class'
+      label: 'Join Class',
     },
     {
       name: 'Settings',
       icon: 'settings',
       route: '/(tabs)/profile',
-      label: 'Settings'
-    }
+      label: 'Settings',
+    },
   ];
 
   const isActiveRoute = (route: string) => {
@@ -45,58 +52,54 @@ const BottomNavigation = () => {
   };
 
   const handleNavigation = (route: string) => {
-    router.push(route);
+    if (pathname !== route) {
+      router.push(route);
+    }
   };
+  
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.navigationContainer}>
-        {navigationItems.map((item, index) => {
-          const isActive = isActiveRoute(item.route);
-          
-          return (
-            <TouchableOpacity
-              key={index}
-              style={styles.navItem}
-              onPress={() => handleNavigation(item.route)}
-              activeOpacity={0.6}
-            >
-              <View style={styles.navContent}>
-                <View style={[styles.iconContainer, isActive && styles.activeIconContainer]}>
-                  <Feather
-                    name={item.icon}
-                    size={isActive ? 24 : 22}
-                    color={isActive ? '#6B8AF7' : '#9CA3AF'}
-                  />
+    <>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.navigationContainer}>
+          {navigationItems.map((item, index) => {
+            const isActive = isActiveRoute(item.route);
+
+            return (
+              <TouchableOpacity
+                key={index}
+                style={styles.navItem}
+                onPress={() => handleNavigation(item.route)}
+                activeOpacity={0.6}
+              >
+                <View style={styles.navContent}>
+                  <View style={[styles.iconContainer, isActive && styles.activeIconContainer]}>
+                    <Feather
+                      name={item.icon}
+                      size={isActive ? 24 : 22}
+                      color={isActive ? '#6B8AF7' : '#9CA3AF'}
+                    />
+                  </View>
+                  <Text style={[styles.navLabel, isActive && styles.activeNavLabel]}>
+                    {item.label}
+                  </Text>
                 </View>
-                <Text style={[styles.navLabel, isActive && styles.activeNavLabel]}>
-                  {item.label}
-                </Text>
-              </View>
-              {isActive && <View style={styles.activeIndicator} />}
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-    </SafeAreaView>
+                {isActive && <View style={styles.activeIndicator} />}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </SafeAreaView>
+    </>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     backgroundColor: 'white',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: -2,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 10,
   },
   navigationContainer: {
     flexDirection: 'row',
-    paddingVertical: 12,
     paddingHorizontal: 8,
     justifyContent: 'space-around',
     alignItems: 'center',
@@ -108,7 +111,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-    paddingVertical: 6,
     paddingHorizontal: 4,
   },
   navContent: {
@@ -123,7 +125,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 4,
     backgroundColor: 'transparent',
-    transition: 'all 0.2s ease',
   },
   activeIconContainer: {
     backgroundColor: '#EEF4FF',

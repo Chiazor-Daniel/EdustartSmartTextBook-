@@ -154,12 +154,11 @@ export default function SignupScreen() {
       enableOnAndroid={true}
       extraScrollHeight={20}
     >
-      <StatusBar style="dark" />
       <Toast />
       
       {/* Header area - space for logo */}
       <View style={styles.headerSpace}>
-       <Image source={require('@/assets/edustart_logo.png')} />
+       <Image source={require('@/assets/logo-1-png.png')} style={{width: 300, height: 300}}/>
       </View>
 
       {/* Main content area */}

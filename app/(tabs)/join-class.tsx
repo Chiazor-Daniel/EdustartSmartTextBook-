@@ -7,7 +7,6 @@ import {
   TouchableOpacity, 
   FlatList, 
   SafeAreaView,
-  Animated
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -26,15 +25,15 @@ const JoinClassScreen = () => {
   
   // Sample data for ongoing classes
   const ongoingClasses: OngoingClass[] = [
-    { id: '1', topic: 'Excretory System and Metabolism', subject: 'Biology', isActive: true, teacher: 'Donatus Biehung' },
+    { id: '1', topic: 'Excretory System and M...', subject: 'Biology', isActive: true, teacher: 'Donatus Biehung' },
     { id: '2', topic: 'Equilibrium', subject: 'Physics', isActive: true, teacher: 'Sarah Johnson' },
     { id: '3', topic: 'Chemical bonding', subject: 'Chemistry', isActive: true, teacher: 'Michael Chen' },
-    { id: '4', topic: 'Basic function of living organisms', subject: 'Biology', isActive: false, teacher: 'Emma Wilson' },
-    { id: '5', topic: 'Basic function of living organisms', subject: 'Biology', isActive: false, teacher: 'James Taylor' },
-    { id: '6', topic: 'Basic function of living organisms', subject: 'Biology', isActive: false, teacher: 'Olivia Brown' },
-    { id: '7', topic: 'Basic function of living organisms', subject: 'Biology', isActive: false, teacher: 'Noah Martinez' },
-    { id: '8', topic: 'Basic function of living organisms', subject: 'Biology', isActive: false, teacher: 'Sophia Garcia' },
-    { id: '9', topic: 'Basic function of living organisms', subject: 'Biology', isActive: false, teacher: 'William Rodriguez' },
+    { id: '4', topic: 'Basic function of living or...', subject: 'Biology', isActive: false, teacher: 'Emma Wilson' },
+    { id: '5', topic: 'Basic function of living or...', subject: 'Biology', isActive: false, teacher: 'James Taylor' },
+    { id: '6', topic: 'Basic function of living or...', subject: 'Biology', isActive: false, teacher: 'Olivia Brown' },
+    { id: '7', topic: 'Basic function of living or...', subject: 'Biology', isActive: false, teacher: 'Noah Martinez' },
+    { id: '8', topic: 'Basic function of living or...', subject: 'Biology', isActive: false, teacher: 'Sophia Garcia' },
+    { id: '9', topic: 'Basic function of living or...', subject: 'Biology', isActive: false, teacher: 'William Rodriguez' },
   ];
 
   const filteredClasses = searchQuery
@@ -104,7 +103,7 @@ const JoinClassScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>Join an Ongoing Class</Text>
         <Text style={styles.subtitle}>
@@ -112,16 +111,16 @@ const JoinClassScreen = () => {
         </Text>
         
         <View style={styles.searchContainer}>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search by subject..."
-            placeholderTextColor="#64748B"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-          <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
-            <Text style={styles.searchButtonText}>Search</Text>
-          </TouchableOpacity>
+          <View style={styles.searchInputContainer}>
+            <Ionicons name="search" size={20} color="#64748B" style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search by Subject"
+              placeholderTextColor="#64748B"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+          </View>
         </View>
         
         <View style={styles.classesContainer}>
@@ -140,7 +139,7 @@ const JoinClassScreen = () => {
           />
         </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -169,28 +168,24 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   searchContainer: {
-    flexDirection: 'row',
     marginBottom: 20,
+  },
+  searchInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F1F5F9',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    height: 44,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  searchIcon: {
+    marginRight: 8,
   },
   searchInput: {
     flex: 1,
-    height: 44,
-    backgroundColor: '#334155',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    color: 'white',
-    marginRight: 8,
-  },
-  searchButton: {
-    backgroundColor: '#EAB308',
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-  },
-  searchButtonText: {
     color: '#1E293B',
-    fontWeight: '600',
     fontSize: 14,
   },
   classesContainer: {
@@ -198,6 +193,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderRadius: 12,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   tableHeader: {
     flexDirection: 'row',
@@ -230,9 +230,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingVertical: 14,
     paddingHorizontal: 16,
-    borderBottomWidth: 0,
-    borderBottomColor: '#E2E8F0',
     alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
   },
   topicContainer: {
     flex: 2,

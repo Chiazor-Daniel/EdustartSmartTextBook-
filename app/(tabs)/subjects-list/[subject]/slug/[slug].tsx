@@ -313,8 +313,6 @@ const SimulationScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="light" />
-
       {/* Fullscreen Mode */}
       {isFullscreen && currentCard?.verge3d_file && (
         <View style={styles.fullscreenContainer}>
@@ -425,7 +423,7 @@ const SimulationScreen = () => {
                 onPress={() => setActiveTab('Topics')}
               >
                 <Ionicons name="list-outline" size={20} color="white" />
-                <Text style={styles.panelTabText}>Content List</Text>
+                <Text style={styles.panelTabText}>Subtopics</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -733,11 +731,11 @@ const SimulationScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1E293B',
+    backgroundColor: '#121212',
   },
   simulationContainer: {
     height: 400,
-    backgroundColor: '#1E293B',
+    backgroundColor: '#121212',
     borderBottomWidth: 1,
     borderBottomColor: '#333',
   },
@@ -858,7 +856,7 @@ const styles = StyleSheet.create({
   },
   controlsContainer: {
     paddingHorizontal: 16,
-    paddingBottom: 16,
+    paddingBottom: 1,
     paddingTop: 8,
   },
   mediaControls: {
@@ -934,7 +932,7 @@ const styles = StyleSheet.create({
   },
   tabContainer: {
     flexDirection: 'row',
-    backgroundColor: '#1E293B',
+    backgroundColor: '#121212',
     borderBottomWidth: 1,
     borderBottomColor: '#333',
   },
@@ -1015,7 +1013,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
-    padding: 20,
+    padding: 0,
   },
   noImageContainer: {
     flex: 1,
@@ -1090,7 +1088,7 @@ const styles = StyleSheet.create({
   experimentFallback: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#2C3E50',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1139,8 +1137,8 @@ const styles = StyleSheet.create({
   panelTabs: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: '#333',
-    backgroundColor: '#1E293B',
+    borderBottomColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: '#121212',
   },
   panelTab: {
     flex: 1,

@@ -3,9 +3,15 @@ import { create } from 'zustand';
 interface UIState {
   isHeaderVisible: boolean;
   setHeaderVisible: (visible: boolean) => void;
+
+  isBottomNavVisible: boolean;
+  setBottomNavVisible: (visible: boolean) => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
   isHeaderVisible: true,
-  setHeaderVisible: (visible: boolean) => set({ isHeaderVisible: visible }),
+  setHeaderVisible: (visible) => set({ isHeaderVisible: visible }),
+
+  isBottomNavVisible: true,
+  setBottomNavVisible: (visible) => set({ isBottomNavVisible: visible }),
 }));

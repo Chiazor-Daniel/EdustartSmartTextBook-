@@ -4,7 +4,6 @@ import { useAuthStore } from "@/store/authStore"
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons"
 import { router } from "expo-router"
 import { useState } from "react"
-import { StatusBar } from "react-native"
 import { Image } from "expo-image"
 import { Dimensions, SafeAreaView, StyleSheet, Text, TouchableOpacity, View, ScrollView } from "react-native"
 import Svg, { Circle, G } from "react-native-svg"
@@ -42,10 +41,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="light" backgroundColor="#F8F9FA"/>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-      
-
         {/* Welcome Card */}
         <ImageBackground source={require("../../assets/hero.png")} style={styles.welcomeCard} resizeMode="cover">
           <View style={styles.welcomeContent}>

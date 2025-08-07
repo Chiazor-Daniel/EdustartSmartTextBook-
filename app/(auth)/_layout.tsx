@@ -1,6 +1,7 @@
 import { Stack } from 'expo-router';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { StyleSheet } from 'react-native';
+import { StatusBar } from 'react-native';
 
 const styles = StyleSheet.create({
   menuButton: {

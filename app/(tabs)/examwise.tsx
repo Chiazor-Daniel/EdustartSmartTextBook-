@@ -1,12 +1,9 @@
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { Audio } from 'expo-av';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   Dimensions,
   Modal,
-  RefreshControl,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -16,107 +13,36 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useUIStore } from '@/store/uiStore';
+import { Image } from 'react-native';
+import { router } from 'expo-router';
+import ExamTimerComponent from '../components/timer';
 
 const { width } = Dimensions.get('window');
 
-export default function ExamWiseScreen() {
-  const [audioLoading, setAudioLoading] = useState(false);
-  const audioSoundRef = React.useRef<Audio.Sound | null>(null);
-
-  const playAudioExplanation = async (explanationText: string) => {
-    try {
-      const response = await fetch('https://class-fi.vercel.app/api/generate-audio', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ explanation: explanationText }),
-      });
-
-      const audioData = await response.json();
-
-      if (audioData.audioDataUri) {
-        console.log('Loading sound...');
-        const { sound } = await Audio.Sound.createAsync(
-          { uri: audioData.audioDataUri }
-        );
-        audioSoundRef.current = sound;
-
-        console.log('Playing sound...');
-        await sound.playAsync();
-      } else {
-        console.error('API did not return audio data.');
-        alert('Audio unavailable.');
-      }
-    } catch (error) {
-      console.error('Failed to generate or play audio:', error);
-      alert('Failed to generate or play audio.');
-    }
-  }
-
-  // State management
+// Screen 1: Exam Form/Setup Screen
+const ExamFormScreen = ({ onBeginExam }) => {
   const [availableSubjects, setAvailableSubjects] = useState(['Physics', 'Chemistry', 'Biology', 'Mathematics']);
   const [selectedSubject, setSelectedSubject] = useState('');
   const [selectedExamType, setSelectedExamType] = useState('');
   const [examTypes] = useState(['JAMB', 'WAEC', 'NECO', 'POST-UTME']);
-  const [analysisResult, setAnalysisResult] = useState(null);
-  const [generatedExam, setGeneratedExam] = useState([]);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [userAnswers, setUserAnswers] = useState({});
-  const [solution, setSolution] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [showSolution, setShowSolution] = useState(false);
   const [examYear, setExamYear] = useState('2025');
   const [difficulty, setDifficulty] = useState('Medium');
+  const [timerDuration, setTimerDuration] = useState(20); // in minutes
   const [showDifficultyDropdown, setShowDifficultyDropdown] = useState(false);
   const [showSubjectDropdown, setShowSubjectDropdown] = useState(false);
   const [showExamTypeDropdown, setShowExamTypeDropdown] = useState(false);
-  const [activeTab, setActiveTab] = useState('setup');
-  const [selectedAnswer, setSelectedAnswer] = useState(null);
-  const [examStarted, setExamStarted] = useState(false);
-  const [examCompleted, setExamCompleted] = useState(false);
-  const [timeRemaining, setTimeRemaining] = useState(1200); // 20 minutes in seconds
-  const [timerActive, setTimerActive] = useState(false);
-  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
-  const [examResults, setExamResults] = useState(null);
+  const [showTimerDropdown, setShowTimerDropdown] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const BASE_URL = 'https://class-fi.vercel.app';
   const difficultyOptions = ['Easy', 'Medium', 'Hard'];
+  const timerOptions = [20, 30, 45, 60]; // minutes
 
   useEffect(() => {
     fetchSubjects();
   }, []);
-
-  // Timer effect
-  useEffect(() => {
-    let interval = null;
-    if (timerActive && timeRemaining > 0) {
-      interval = setInterval(() => {
-        setTimeRemaining(time => {
-          if (time <= 1) {
-            setTimerActive(false);
-            handleSubmitExam();
-            return 0;
-          }
-          return time - 1;
-        });
-      }, 1000);
-    } else if (timeRemaining === 0) {
-      setTimerActive(false);
-    }
-    return () => clearInterval(interval);
-  }, [timerActive, timeRemaining]);
-
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchSubjects();
-    setRefreshing(false);
-  };
 
   const fetchSubjects = async () => {
     setLoading(true);
@@ -133,7 +59,7 @@ export default function ExamWiseScreen() {
     }
   };
 
-  const generateExam = async () => {
+  const handleBeginExam = async () => {
     if (!selectedSubject || !selectedExamType) {
       Alert.alert('Error', 'Please select both subject and exam type');
       return;
@@ -141,6 +67,7 @@ export default function ExamWiseScreen() {
 
     setLoading(true);
     try {
+      // Generate exam questions
       const response = await fetch(`${BASE_URL}/api/generate-questions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -152,12 +79,13 @@ export default function ExamWiseScreen() {
         }),
       });
       
+      let examQuestions = [];
       if (response.ok) {
         const examData = await response.json();
-        setGeneratedExam(examData.questions || []);
+        examQuestions = examData.questions || [];
       } else {
         // Mock exam data for demo
-        setGeneratedExam([
+        examQuestions = [
           {
             question: "Which structure is NOT found in animal cells?",
             options: ["Cell wall", "Cell membrane", "Cytoplasm", "Nucleus"],
@@ -173,21 +101,272 @@ export default function ExamWiseScreen() {
             options: ["Phloem", "Xylem", "Cambium", "Epidermis"],
             correctAnswer: "Xylem"
           }
-        ]);
+        ];
       }
-      
-      setCurrentQuestionIndex(0);
-      setUserAnswers({});
-      setSelectedAnswer(null);
-      setActiveTab('timer');
-      setExamStarted(true);
-      setTimeRemaining(1200); // Reset timer to 20 minutes
+
+      const examConfig = {
+        subject: selectedSubject,
+        examType: selectedExamType,
+        year: examYear,
+        difficulty: difficulty,
+        timerDuration: timerDuration * 60, // convert to seconds
+        questions: examQuestions
+      };
+
+      onBeginExam(examConfig);
     } catch (error) {
       console.error('Failed to generate exam:', error);
       Alert.alert('Error', 'Failed to generate exam');
     } finally {
       setLoading(false);
     }
+  };
+
+  const formatTime = (minutes) => {
+    if (minutes < 60) {
+      return `${minutes} mins`;
+    }
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+  };
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      
+      <View style={styles.container}>
+
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.headerTitle}>Take an Exam</Text>
+          </View>
+        </View>
+          <View style={styles.welcomeSection}>
+            <Text style={styles.welcomeTitle}>Ready to <Text style={styles.testText}>test</Text> your knowledge?</Text>
+            <Text style={styles.welcomeTitle}>Fill the form below to generate questions.</Text>
+          </View>
+
+          <View style={styles.formCard}>
+            <View style={styles.cardHeader}>
+              <MaterialCommunityIcons name="clipboard-list" size={20} color="#4A90E2" />
+              <Text style={styles.cardTitle}>Generate Mock Exam</Text>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Exam Type *</Text>
+              <TouchableOpacity
+                style={styles.selectInput}
+                onPress={() => setShowExamTypeDropdown(!showExamTypeDropdown)}
+              >
+                <Text style={[styles.selectText, !selectedExamType && styles.placeholderText]}>
+                  {selectedExamType || 'Select exam type (e.g jamb, waec etc)'}
+                </Text>
+                <Ionicons 
+                  name={showExamTypeDropdown ? "chevron-up" : "chevron-down"} 
+                  size={16} 
+                  color="#666" 
+                />
+              </TouchableOpacity>
+              
+              {showExamTypeDropdown && (
+                <View style={styles.dropdown}>
+                  {examTypes.map((type, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={styles.dropdownItem}
+                      onPress={() => {
+                        setSelectedExamType(type);
+                        setShowExamTypeDropdown(false);
+                      }}
+                    >
+                      <Text style={styles.dropdownItemText}>{type}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Subject *</Text>
+              <TouchableOpacity
+                style={styles.selectInput}
+                onPress={() => setShowSubjectDropdown(!showSubjectDropdown)}
+              >
+                <Text style={[styles.selectText, !selectedSubject && styles.placeholderText]}>
+                  {selectedSubject || 'Select your subject'}
+                </Text>
+                <Ionicons 
+                  name={showSubjectDropdown ? "chevron-up" : "chevron-down"} 
+                  size={16} 
+                  color="#666" 
+                />
+              </TouchableOpacity>
+              
+              {showSubjectDropdown && (
+                <View style={styles.dropdown}>
+                  {availableSubjects.map((subject, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={styles.dropdownItem}
+                      onPress={() => {
+                        setSelectedSubject(subject);
+                        setShowSubjectDropdown(false);
+                      }}
+                    >
+                      <Text style={styles.dropdownItemText}>{subject}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Target Year *</Text>
+              <TextInput
+                style={styles.textInput}
+                value={examYear}
+                onChangeText={setExamYear}
+                keyboardType="numeric"
+                placeholder="Select the year"
+                placeholderTextColor="#999"
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Difficulty *</Text>
+              <TouchableOpacity
+                style={styles.selectInput}
+                onPress={() => setShowDifficultyDropdown(!showDifficultyDropdown)}
+              >
+                <Text style={[styles.selectText, !difficulty && styles.placeholderText]}>
+                  {difficulty || 'Select difficulty level'}
+                </Text>
+                <Ionicons 
+                  name={showDifficultyDropdown ? "chevron-up" : "chevron-down"} 
+                  size={16} 
+                  color="#666" 
+                />
+              </TouchableOpacity>
+              
+              {showDifficultyDropdown && (
+                <View style={styles.dropdown}>
+                  {difficultyOptions.map((option, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={styles.dropdownItem}
+                      onPress={() => {
+                        setDifficulty(option);
+                        setShowDifficultyDropdown(false);
+                      }}
+                    >
+                      <Text style={styles.dropdownItemText}>{option}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Timer Duration *</Text>
+              <TouchableOpacity
+                style={styles.selectInput}
+                onPress={() => setShowTimerDropdown(!showTimerDropdown)}
+              >
+                <Text style={styles.selectText}>
+                  {formatTime(timerDuration)}
+                </Text>
+                <Ionicons 
+                  name={showTimerDropdown ? "chevron-up" : "chevron-down"} 
+                  size={16} 
+                  color="#666" 
+                />
+              </TouchableOpacity>
+              
+              {showTimerDropdown && (
+                <View style={styles.dropdown}>
+                  {timerOptions.map((option, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={styles.dropdownItem}
+                      onPress={() => {
+                        setTimerDuration(option);
+                        setShowTimerDropdown(false);
+                      }}
+                    >
+                      <Text style={styles.dropdownItemText}>{formatTime(option)}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
+
+            <TouchableOpacity 
+              style={styles.generateButton} 
+              onPress={handleBeginExam}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <>
+                  <Text style={styles.generateButtonText}>Generate Questions</Text>
+                  <Ionicons name="chevron-forward" size={16} color="white" />
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </View>
+    </SafeAreaView>
+  );
+};
+
+// Screen 2: Exam Session Screen
+const ExamSessionScreen = ({ examConfig, onRetakeExam }: any) => {
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [userAnswers, setUserAnswers] = useState({});
+  const [selectedAnswer, setSelectedAnswer] = useState(null);
+  const [timeRemaining, setTimeRemaining] = useState(examConfig.timerDuration);
+  const [timerActive, setTimerActive] = useState(true);
+  const [examCompleted, setExamCompleted] = useState(false);
+  const [examResults, setExamResults] = useState(null);
+  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
+  const [showSolution, setShowSolution] = useState(false);
+  const [solution, setSolution] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [audioLoading, setAudioLoading] = useState(false);
+  const [currentView, setCurrentView] = useState('exam'); // 'exam', 'results', 'review'
+
+  const BASE_URL = 'https://class-fi.vercel.app';
+
+  // Timer effect
+  useEffect(() => {
+    let interval = null;
+    if (timerActive && timeRemaining > 0 && !examCompleted) {
+      interval = setInterval(() => {
+        setTimeRemaining(time => {
+          if (time <= 1) {
+            setTimerActive(false);
+            handleSubmitExam();
+            return 0;
+          }
+          return time - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [timerActive, timeRemaining, examCompleted]);
+
+  // Set selected answer when navigating questions
+  useEffect(() => {
+    setSelectedAnswer(userAnswers[currentQuestionIndex] || null);
+  }, [currentQuestionIndex, userAnswers]);
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   const handleAnswerSelect = (answerIndex) => {
@@ -200,7 +379,6 @@ export default function ExamWiseScreen() {
 
   const navigateToQuestion = (questionIndex) => {
     setCurrentQuestionIndex(questionIndex);
-    setSelectedAnswer(userAnswers[questionIndex] || null);
   };
 
   const handleSubmitExam = () => {
@@ -209,22 +387,22 @@ export default function ExamWiseScreen() {
     
     // Calculate results
     let correctAnswers = 0;
-    generatedExam.forEach((question, index) => {
+    examConfig.questions.forEach((question, index) => {
       const userAnswer = userAnswers[index];
       if (userAnswer !== undefined && question.options[userAnswer] === question.correctAnswer) {
         correctAnswers++;
       }
     });
 
-    const score = Math.round((correctAnswers / generatedExam.length) * 100);
+    const score = Math.round((correctAnswers / examConfig.questions.length) * 100);
     setExamResults({
       score,
       correctAnswers,
-      totalQuestions: generatedExam.length,
-      timeUsed: 1200 - timeRemaining
+      totalQuestions: examConfig.questions.length,
+      timeUsed: examConfig.timerDuration - timeRemaining
     });
     
-    setActiveTab('results');
+    setCurrentView('results');
     setShowSubmitConfirm(false);
   };
 
@@ -257,23 +435,33 @@ export default function ExamWiseScreen() {
     }
   };
 
-  const resetExam = () => {
-    setActiveTab('setup');
-    setExamStarted(false);
-    setExamCompleted(false);
-    setGeneratedExam([]);
-    setUserAnswers({});
-    setCurrentQuestionIndex(0);
-    setSelectedAnswer(null);
-    setTimerActive(false);
-    setTimeRemaining(1200);
-    setExamResults(null);
+  const playAudioExplanation = async (explanationText) => {
+    try {
+      const response = await fetch(`${BASE_URL}/api/generate-audio`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ explanation: explanationText }),
+      });
+
+      const audioData = await response.json();
+
+      if (audioData.audioDataUri) {
+        console.log('Audio would play here');
+        // Audio playback logic would go here
+      } else {
+        console.error('API did not return audio data.');
+        alert('Audio unavailable.');
+      }
+    } catch (error) {
+      console.error('Failed to generate or play audio:', error);
+      alert('Failed to generate or play audio.');
+    }
   };
 
   const getAnswerStatus = (questionIndex) => {
     if (userAnswers[questionIndex] !== undefined) {
       if (examCompleted) {
-        const isCorrect = generatedExam[questionIndex].options[userAnswers[questionIndex]] === generatedExam[questionIndex].correctAnswer;
+        const isCorrect = examConfig.questions[questionIndex].options[userAnswers[questionIndex]] === examConfig.questions[questionIndex].correctAnswer;
         return isCorrect ? 'correct' : 'incorrect';
       }
       return 'answered';
@@ -281,232 +469,40 @@ export default function ExamWiseScreen() {
     return 'unanswered';
   };
 
-  const renderSetupTab = () => (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Text style={styles.headerTitle}>Take an Exam</Text>
-        </View>
-        
-      </View>
-
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.welcomeSection}>
-          <Text style={styles.welcomeTitle}>Ready to <Text style={styles.testText}>test</Text> your knowledge?</Text>
-          <Text style={styles.welcomeSubtitle}>Fill the form below to generate questions.</Text>
-        </View>
-
-        <View style={styles.formCard}>
-          <View style={styles.cardHeader}>
-            <MaterialCommunityIcons name="clipboard-list" size={20} color="#4A90E2" />
-            <Text style={styles.cardTitle}>Generate Mock Exam</Text>
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Exam Type *</Text>
-            <TouchableOpacity
-              style={styles.selectInput}
-              onPress={() => setShowExamTypeDropdown(!showExamTypeDropdown)}
-            >
-              <Text style={[styles.selectText, !selectedExamType && styles.placeholderText]}>
-                {selectedExamType || 'Select exam type (e.g jamb, waec etc)'}
-              </Text>
-              <Ionicons 
-                name={showExamTypeDropdown ? "chevron-up" : "chevron-down"} 
-                size={16} 
-                color="#666" 
-              />
-            </TouchableOpacity>
-            
-            {showExamTypeDropdown && (
-              <View style={styles.dropdown}>
-                {examTypes.map((type, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={styles.dropdownItem}
-                    onPress={() => {
-                      setSelectedExamType(type);
-                      setShowExamTypeDropdown(false);
-                    }}
-                  >
-                    <Text style={styles.dropdownItemText}>{type}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Subject *</Text>
-            <TouchableOpacity
-              style={styles.selectInput}
-              onPress={() => setShowSubjectDropdown(!showSubjectDropdown)}
-            >
-              <Text style={[styles.selectText, !selectedSubject && styles.placeholderText]}>
-                {selectedSubject || 'Select your subject'}
-              </Text>
-              <Ionicons 
-                name={showSubjectDropdown ? "chevron-up" : "chevron-down"} 
-                size={16} 
-                color="#666" 
-              />
-            </TouchableOpacity>
-            
-            {showSubjectDropdown && (
-              <View style={styles.dropdown}>
-                {availableSubjects.map((subject, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={styles.dropdownItem}
-                    onPress={() => {
-                      setSelectedSubject(subject);
-                      setShowSubjectDropdown(false);
-                    }}
-                  >
-                    <Text style={styles.dropdownItemText}>{subject}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Target Year *</Text>
-            <TextInput
-              style={styles.textInput}
-              value={examYear}
-              onChangeText={setExamYear}
-              keyboardType="numeric"
-              placeholder="Select the year"
-              placeholderTextColor="#999"
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Difficulty *</Text>
-            <TouchableOpacity
-              style={styles.selectInput}
-              onPress={() => setShowDifficultyDropdown(!showDifficultyDropdown)}
-            >
-              <Text style={[styles.selectText, !difficulty && styles.placeholderText]}>
-                {difficulty || 'Select difficulty level'}
-              </Text>
-              <Ionicons 
-                name={showDifficultyDropdown ? "chevron-up" : "chevron-down"} 
-                size={16} 
-                color="#666" 
-              />
-            </TouchableOpacity>
-            
-            {showDifficultyDropdown && (
-              <View style={styles.dropdown}>
-                {difficultyOptions.map((option, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={styles.dropdownItem}
-                    onPress={() => {
-                      setDifficulty(option);
-                      setShowDifficultyDropdown(false);
-                    }}
-                  >
-                    <Text style={styles.dropdownItemText}>{option}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-          </View>
-
-          <TouchableOpacity 
-            style={styles.generateButton} 
-            onPress={generateExam}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator size="small" color="white" />
-            ) : (
-              <>
-                <Text style={styles.generateButtonText}>Generate Questions</Text>
-                <Ionicons name="chevron-forward" size={16} color="white" />
-              </>
-            )}
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </View>
-  );
-
-  const renderTimerTab = () => (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Text style={styles.headerTitle}>Set Timer</Text>
-        </View>
-      </View>
-
-      <View style={styles.timerContent}>
-        <View style={styles.timerSection}>
-          <View style={styles.timerCircle}>
-            <Text style={styles.timerText}>{formatTime(timeRemaining)}</Text>
-          </View>
-          
-          <Text style={styles.subjectTitle}>{selectedSubject}</Text>
-          <Text style={styles.examTypeTitle}>{selectedExamType} Exam</Text>
-        </View>
-
-        <View style={styles.instructionsCard}>
-          <Text style={styles.instructionsTitle}>Before You Begin</Text>
-          <Text style={styles.instructionsText}>
-            {`- Make sure you have a stable internet connection.\n- Understand that questions before selecting an answer.\n- Check through your answers before time runs out.\n- Click the "submit" to submit exam once you are done.\n- It will auto submit if the time runs out.`}
-          </Text>
-          <Text style={styles.readyTitle}>Ready to Begin?</Text>
-          <Text style={styles.readySubtitle}>Click the button to begin. Good luck!</Text>
-        </View>
-
-        <TouchableOpacity 
-          style={styles.beginButton}
-          onPress={() => {
-            setActiveTab('exam');
-            setTimerActive(true);
-          }}
-        >
-          <Text style={styles.beginButtonText}>Begin</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
-  const renderExamTab = () => (
-    <View style={styles.container}>
+  const renderExamView = () => (
+    <>
       <View style={styles.examHeader}>
         <View style={styles.examHeaderContent}>
           <View style={styles.examInfo}>
-            <Text style={styles.examSubject}>{selectedSubject}</Text>
-            <Text style={styles.examDetails}>{selectedExamType} • {examYear} Exam</Text>
-            <Text style={styles.questionNumber}>Question {currentQuestionIndex + 1}/{generatedExam.length}</Text>
+            <Text style={styles.examSubject}>{examConfig.subject}</Text>
+            <Text style={styles.examDetails}>{examConfig.examType} • {examConfig.year} Exam</Text>
+            <Text style={styles.questionNumber}>Question {currentQuestionIndex + 1}/{examConfig.questions.length}</Text>
           </View>
           <View style={styles.examHeaderRight}>
             <View style={styles.timerBadge}>
               <Text style={styles.timerBadgeText}>{formatTime(timeRemaining)}</Text>
             </View>
-            <TouchableOpacity 
+            <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', padding: 0, paddingHorizontal: 0}}>
+          <TouchableOpacity 
               style={styles.submitButton}
               onPress={() => setShowSubmitConfirm(true)}
             >
               <Text style={styles.submitButtonText}>Submit</Text>
             </TouchableOpacity>
+        </View>
           </View>
         </View>
       </View>
 
       <ScrollView style={styles.examContent} showsVerticalScrollIndicator={false}>
-        {generatedExam.length > 0 && (
+        {examConfig.questions.length > 0 && (
           <View style={styles.questionCard}>
             <Text style={styles.questionText}>
-              {generatedExam[currentQuestionIndex]?.question}
+              {examConfig.questions[currentQuestionIndex]?.question}
             </Text>
             
             <View style={styles.optionsContainer}>
-              {generatedExam[currentQuestionIndex]?.options?.map((option, index) => (
+              {examConfig.questions[currentQuestionIndex]?.options?.map((option, index) => (
                 <TouchableOpacity 
                   key={index} 
                   style={[
@@ -531,19 +527,19 @@ export default function ExamWiseScreen() {
               ))}
             </View>
 
-            <TouchableOpacity
+            {/* <TouchableOpacity
               style={styles.seeExplanationButton}
-              onPress={() => getSolution(generatedExam[currentQuestionIndex])}
+              onPress={() => getSolution(examConfig.questions[currentQuestionIndex])}
             >
               <MaterialCommunityIcons name="lightbulb-outline" size={16} color="#4A90E2" />
               <Text style={styles.seeExplanationText}>See Explanation</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
         )}
 
         {/* Question Grid Navigator */}
         <View style={styles.questionGrid}>
-          {generatedExam.map((_, index) => {
+          {examConfig.questions.map((_, index) => {
             const status = getAnswerStatus(index);
             const isAnswered = userAnswers[index] !== undefined;
             const isCurrent = currentQuestionIndex === index;
@@ -574,7 +570,7 @@ export default function ExamWiseScreen() {
         {/* Navigation Buttons */}
         <View style={styles.navigationButtons}>
           <TouchableOpacity
-            style={[styles.navButton, styles.backButton, currentQuestionIndex === 0 && styles.navButtonDisabled]}
+            style={[styles.backButton, currentQuestionIndex === 0 && styles.navButtonDisabled]}
             onPress={() => {
               if (currentQuestionIndex > 0) {
                 navigateToQuestion(currentQuestionIndex - 1);
@@ -583,94 +579,114 @@ export default function ExamWiseScreen() {
             disabled={currentQuestionIndex === 0}
           >
             <Ionicons name="chevron-back" size={16} color="white" />
-            <Text style={styles.navButtonText}>Back</Text>
+            <Text style={{color: '#000'}}>Back</Text>
           </TouchableOpacity>
           
           <TouchableOpacity
-            style={[styles.navButton, styles.nextButton, currentQuestionIndex === generatedExam.length - 1 && styles.navButtonDisabled]}
+            style={[styles.navButton, styles.nextButton, currentQuestionIndex === examConfig.questions.length - 1 && styles.navButtonDisabled]}
             onPress={() => {
-              if (currentQuestionIndex < generatedExam.length - 1) {
+              if (currentQuestionIndex < examConfig.questions.length - 1) {
                 navigateToQuestion(currentQuestionIndex + 1);
               }
             }}
-            disabled={currentQuestionIndex === generatedExam.length - 1}
+            disabled={currentQuestionIndex === examConfig.questions.length - 1}
           >
             <Text style={styles.navButtonText}>Next</Text>
             <Ionicons name="chevron-forward" size={16} color="white" />
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </View>
+    </>
   );
 
-  const renderResultsTab = () => (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Text style={styles.headerTitle}>Exam Results</Text>
+  const renderResultsView = () => {
+    const percentageScore = (examResults?.correctAnswers / examResults?.totalQuestions) * 100;
+  
+    let iconSource;
+    let iconName;
+  
+    if (percentageScore <= 20) {
+      iconSource = require('@/assets/tired-man-sleeping-on-floor.png');
+    } else if (percentageScore <= 40) {
+      iconSource = require('@/assets/girl-taking-funny-photo.png');
+    } else if (percentageScore <= 60) {
+      iconSource = require('@/assets/happy-woman-makes-heart-shape-by-her-hand.png');
+    } else if (percentageScore <= 80) {
+      iconSource = require('@/assets/young-man-rejoicing-success.png');
+    } else {
+      iconSource = require('@/assets/happy-woman-jumping-with-confetti.png');
+    }
+  
+    return (
+      <>
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.headerTitle}>Exam Results</Text>
+          </View>
         </View>
-      </View>
-
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.resultsSubject}>{selectedSubject} • {selectedExamType} Exam</Text>
-        
-        {examResults && (
-          <>
-            <Text style={styles.scoreDisplay}>
-              You scored {examResults.correctAnswers} out of {examResults.totalQuestions}
-            </Text>
-            
-            <View style={styles.completionCard}>
-              <View style={styles.completionIcon}>
-                <MaterialCommunityIcons name="trophy" size={60} color="#FFD700" />
-              </View>
-              <Text style={styles.completionTitle}>Exam Completed</Text>
-              <Text style={styles.completionMessage}>
-                Well done! You have successfully completed your exam. You may now review your answers below.
+  
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          <Text style={styles.resultsSubject}>{examConfig.subject} • {examConfig.examType} Exam</Text>
+          
+          {examResults && (
+            <>
+              <Text style={styles.scoreDisplay}>
+                You scored {examResults?.correctAnswers} out of {examResults?.totalQuestions}
               </Text>
-              <TouchableOpacity 
-                style={styles.viewResultButton}
-                onPress={() => setActiveTab('review')}
-              >
-                <Text style={styles.viewResultButtonText}>View Result</Text>
-                <Ionicons name="arrow-forward" size={16} color="white" />
-              </TouchableOpacity>
-            </View>
-          </>
-        )}
-        
-        <TouchableOpacity style={styles.retakeExamButton} onPress={resetExam}>
-          <Text style={styles.retakeExamButtonText}>Take Another Exam</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </View>
-  );
-
-  const renderReviewTab = () => (
-    <View style={styles.container}>
+              
+              <View style={styles.completionCard}>
+                <View style={styles.completionIcon}>
+                  <Image source={iconSource} style={styles.completionIconImage} />
+                </View>
+                <Text style={styles.completionTitle}>{iconName}</Text>
+                <Text style={styles.completionMessage}>
+                  {percentageScore >= 50 
+                    ? 'Well done! You have successfully completed your exam. You may now review your answers below.'
+                    : 'Don\'t worry, you can always try again. Review your answers below to learn from your mistakes.'
+                  }
+                </Text>
+                <TouchableOpacity 
+                  style={styles.viewResultButton}
+                  onPress={() => setCurrentView('review')}
+                >
+                  <Text style={styles.viewResultButtonText}>View Result</Text>
+                  <View style={styles.viewResultButtonIcon}>  
+                    <Ionicons name="arrow-forward" size={16} color="#0961F5" />
+                  </View>
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
+          
+          {/* <TouchableOpacity style={styles.retakeExamButton} onPress={onRetakeExam}>
+            <Text style={styles.retakeExamButtonText}>Take Another Exam</Text>
+          </TouchableOpacity> */}
+        </ScrollView>
+      </>
+    );
+  };
+  const renderReviewView = () => (
+    <>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Text style={styles.headerTitle}>Exam Results</Text>
+          <Text style={styles.headerTitle}>Review Answers</Text>
         </View>
         <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.headerIcon}>
-            <Ionicons name="moon-outline" size={20} color="#666" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.headerIcon}>
-            <Ionicons name="person-circle-outline" size={20} color="#666" />
+          <TouchableOpacity style={{flexDirection: 'row', backgroundColor: '#0961F5', alignItems: 'center', padding: 10, borderRadius: 30, paddingHorizontal: 20}} onPress={() => router.push('/(tabs)/home')}>
+            <Text style={{color: '#fff'}}>Exit</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       <View style={styles.reviewHeader}>
-        <Text style={styles.reviewSubject}>{selectedExamType} • {examYear} • Expert</Text>
+        <Text style={styles.reviewSubject}>{examConfig.examType} • {examConfig.year} • {examConfig.difficulty}</Text>
         <Text style={styles.reviewScore}>
           You scored <Text style={styles.scoreNumber}>{examResults?.correctAnswers || 0}</Text> out of <Text style={styles.totalNumber}>{examResults?.totalQuestions || 0}</Text>
         </Text>
       </View>
 
       <ScrollView style={styles.reviewContent} showsVerticalScrollIndicator={false}>
-        {generatedExam.map((question, questionIndex) => {
+        {examConfig.questions.map((question, questionIndex) => {
           const userAnswerIndex = userAnswers[questionIndex];
           const correctAnswerIndex = question.options.findIndex(option => option === question.correctAnswer);
           const isCorrect = userAnswerIndex === correctAnswerIndex;
@@ -678,7 +694,7 @@ export default function ExamWiseScreen() {
           return (
             <View key={questionIndex} style={styles.reviewQuestionCard}>
               <View style={styles.reviewQuestionHeader}>
-                <Text style={styles.reviewQuestionNumber}>Question {questionIndex + 1}/40</Text>
+                <Text style={styles.reviewQuestionNumber}>Question {questionIndex + 1}/{examConfig.questions.length}</Text>
               </View>
               
               <Text style={styles.reviewQuestionText}>{question.question}</Text>
@@ -729,134 +745,185 @@ export default function ExamWiseScreen() {
                 style={styles.reviewSeeExplanationButton}
                 onPress={() => getSolution(question)}
               >
-                <MaterialCommunityIcons name="lightbulb-outline" size={16} color="#4A90E2" />
+                <MaterialCommunityIcons name="star-shooting-outline" size={16} color="#4A90E2" />
                 <Text style={styles.reviewSeeExplanationText}>See Explanation</Text>
               </TouchableOpacity>
             </View>
           );
         })}
       </ScrollView>
-    </View>
+    </>
   );
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       
-      {/* Conditional rendering based on state */}
-      {!examStarted && renderSetupTab()}
-      {examStarted && !examCompleted && activeTab === 'timer' && renderTimerTab()}
-      {examStarted && !examCompleted && activeTab === 'exam' && renderExamTab()}
-      {examCompleted && activeTab === 'results' && renderResultsTab()}
-      {examCompleted && activeTab === 'review' && renderReviewTab()}
+      <View style={styles.container}>
+        {currentView === 'exam' && renderExamView()}
+        {currentView === 'results' && renderResultsView()}
+        {currentView === 'review' && renderReviewView()}
 
-      {/* Submit Confirmation Modal */}
-      <Modal visible={showSubmitConfirm} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.confirmModal}>
-            <Text style={styles.confirmTitle}>Are you sure you want to submit?</Text>
-            <Text style={styles.confirmMessage}>
-              Once you click "Submit" you can't edit your answers again.
-            </Text>
-            <View style={styles.confirmActions}>
+        {/* Submit Confirmation Modal */}
+        <Modal visible={showSubmitConfirm} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={styles.confirmModal}>
+              <Text style={styles.confirmTitle}>Are you sure you want to submit?</Text>
+              <Text style={styles.confirmMessage}>
+                Once you click "Submit" you can't edit your answers again.
+              </Text>
+              <View style={styles.confirmActions}>
+                <TouchableOpacity 
+                  style={styles.goBackButton}
+                  onPress={() => setShowSubmitConfirm(false)}
+                >
+                  <Text style={styles.goBackButtonText}>Go back</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.confirmSubmitButton}
+                  onPress={handleSubmitExam}
+                >
+                  <Text style={styles.confirmSubmitButtonText}>Submit</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Time's Up Modal */}
+        <Modal visible={timeRemaining === 0 && !examCompleted} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={styles.timeUpModal}>
+              <Text style={styles.timeUpTitle}>Time's Up!!</Text>
+              <Text style={styles.timeUpMessage}>
+                Oops, you have run out of time and your progress has been submitted. Click the button below to view your result!
+              </Text>
               <TouchableOpacity 
-                style={styles.goBackButton}
-                onPress={() => setShowSubmitConfirm(false)}
-              >
-                <Text style={styles.goBackButtonText}>Go back</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.confirmSubmitButton}
+                style={styles.viewResultButton}
                 onPress={handleSubmitExam}
               >
-                <Text style={styles.confirmSubmitButtonText}>Submit</Text>
+                <Text style={styles.viewResultButtonText}>View Result</Text>
               </TouchableOpacity>
             </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
 
-      {/* Time's Up Modal */}
-      <Modal visible={timeRemaining === 0 && !examCompleted} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.timeUpModal}>
-            <Text style={styles.timeUpTitle}>Time's Up!!</Text>
-            <Text style={styles.timeUpMessage}>
-              Oops, you have run out of time and your progress has been submitted. Click the button below to view your result!
-            </Text>
-            <TouchableOpacity 
-              style={styles.viewResultButton}
-              onPress={handleSubmitExam}
-            >
-              <Text style={styles.viewResultButtonText}>View Result</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Solution Modal */}
-      <Modal visible={showSolution} animationType="slide" presentationStyle="pageSheet">
-        <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <View style={styles.modalTitleContainer}>
-              <MaterialCommunityIcons name="lightbulb" size={24} color="#4A90E2" />
-              <Text style={styles.modalTitle}>Solution</Text>
-            </View>
-            <View style={styles.modalHeaderActions}>
-              <TouchableOpacity
-                style={styles.audioButton}
-                onPress={async () => {
-                  if (!solution) return;
-                  setAudioLoading(true);
-                  try {
-                    await playAudioExplanation(solution);
-                  } finally {
-                    setAudioLoading(false);
-                  }
-                }}
-                disabled={audioLoading}
-              >
-                {audioLoading ? (
-                  <ActivityIndicator size={18} color="#4A90E2" />
-                ) : (
-                  <Ionicons name="volume-high" size={22} color="#4A90E2" />
-                )}
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.closeModalButton}
-                onPress={async () => {
-                  if (audioSoundRef.current) {
+        {/* Solution Modal */}
+        <Modal visible={showSolution} animationType="slide" presentationStyle="pageSheet">
+          <SafeAreaView style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <View style={styles.modalTitleContainer}>
+                <MaterialCommunityIcons name="lightbulb" size={24} color="#4A90E2" />
+                <Text style={styles.modalTitle}>Solution</Text>
+              </View>
+              <View style={styles.modalHeaderActions}>
+                <TouchableOpacity
+                  style={styles.audioButton}
+                  onPress={async () => {
+                    if (!solution) return;
+                    setAudioLoading(true);
                     try {
-                      await audioSoundRef.current.stopAsync();
-                      await audioSoundRef.current.unloadAsync();
-                    } catch {}
-                    audioSoundRef.current = null;
-                  }
-                  setShowSolution(false);
-                }}
-              >
-                <Ionicons name="close" size={24} color="#666" />
-              </TouchableOpacity>
+                      await playAudioExplanation(solution);
+                    } finally {
+                      setAudioLoading(false);
+                    }
+                  }}
+                  disabled={audioLoading}
+                >
+                  {audioLoading ? (
+                    <ActivityIndicator size={18} color="#4A90E2" />
+                  ) : (
+                    <Ionicons name="volume-high" size={22} color="#4A90E2" />
+                  )}
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.closeModalButton}
+                  onPress={() => setShowSolution(false)}
+                >
+                  <Ionicons name="close" size={24} color="#666" />
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
-          
-          <ScrollView style={styles.modalContent} contentContainerStyle={{ paddingBottom: 24 }}>
-            <Text style={styles.solutionText}>{solution}</Text>
-          </ScrollView>
-        </SafeAreaView>
-      </Modal>
+            
+            <ScrollView style={styles.modalContent} contentContainerStyle={{ paddingBottom: 24 }}>
+              <Text style={styles.solutionText}>{solution}</Text>
+            </ScrollView>
+          </SafeAreaView>
+        </Modal>
+      </View>
     </SafeAreaView>
   );
 };
 
+// Main App Component
+export default function ExamWiseScreen() {
+  const [currentScreen, setCurrentScreen] = useState<'form' | 'timer' | 'session'>('form');
+  const [examConfig, setExamConfig] = useState<any>(null);
+  const setIsHeaderVisible = useUIStore(state => state.setHeaderVisible);
+  const setBottomNavVisible = useUIStore(state => state.setBottomNavVisible);
+
+  // useEffect(() => {
+  //   const isForm = currentScreen === 'form';
+  //   setBottomNavVisible(isForm);
+  //   setIsHeaderVisible(isForm);
+  // }, [currentScreen]);
+
+  // Called when ExamFormScreen is submitted and questions are generated
+  const handleFormBeginExam = (config: any) => {
+    setExamConfig(config);
+    setCurrentScreen('timer');
+  };
+
+  // Called when timer "Begin" is pressed
+  const handleTimerBegin = () => {
+    setCurrentScreen('session');
+  };
+
+  const handleRetakeExam = () => {
+    setExamConfig(null);
+    setCurrentScreen('form');
+  };
+
+  return (
+    <>
+      {currentScreen === 'form' && (
+        <ExamFormScreen onBeginExam={handleFormBeginExam} />
+      )}
+      {currentScreen === 'timer' && examConfig && (
+        <ExamTimerComponent
+          timeDisplay={formatTimerDisplay(examConfig.timerDuration)}
+          subject={examConfig.subject}
+          examType={examConfig.examType}
+          year={examConfig.year}
+          difficulty={examConfig.difficulty}
+          onBegin={handleTimerBegin}
+        />
+      )}
+      {currentScreen === 'session' && examConfig && (
+        <ExamSessionScreen
+          examConfig={examConfig}
+          onRetakeExam={handleRetakeExam}
+        />
+      )}
+    </>
+  );
+}
+
+// Helper to format timer display (e.g., 1200s => "20:00")
+function formatTimerDisplay(seconds: number) {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#fff',
   },
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#fff',
   },
   header: {
     flexDirection: 'row',
@@ -871,7 +938,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#000000',
+    color: '#5580D4',
   },
   headerRight: {
     flexDirection: 'row',
@@ -886,7 +953,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   welcomeSection: {
-    paddingVertical: 24,
+    paddingVertical: 4,
   },
   welcomeTitle: {
     fontSize: 22,
@@ -911,16 +978,18 @@ const styles = StyleSheet.create({
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 20,
   },
   cardTitle: {
-    fontSize: 16,
+    fontSize: 25,
     fontWeight: '600',
-    color: '#000000',
+    color: '#5580D4',
     marginLeft: 8,
   },
   inputGroup: {
     marginBottom: 16,
+    position: 'relative',
   },
   inputLabel: {
     fontSize: 14,
@@ -932,12 +1001,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#F8F9FA',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
+    backgroundColor: '#F5F7FA',
     borderRadius: 8,
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingVertical: 18,
   },
   selectText: {
     fontSize: 14,
@@ -948,9 +1015,8 @@ const styles = StyleSheet.create({
     color: '#999999',
   },
   textInput: {
-    backgroundColor: '#F8F9FA',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
+    backgroundColor: '#F5F7FA',
+   
     borderRadius: 8,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -985,7 +1051,7 @@ const styles = StyleSheet.create({
   },
   generateButton: {
     backgroundColor: '#4A90E2',
-    borderRadius: 8,
+    borderRadius: 30,
     paddingVertical: 16,
     paddingHorizontal: 20,
     flexDirection: 'row',
@@ -999,93 +1065,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginRight: 8,
   },
-  // Timer Screen Styles
-  timerContent: {
-    flex: 1,
-    paddingHorizontal: 20,
-    justifyContent: 'center',
-  },
-  timerSection: {
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  timerCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-    borderWidth: 3,
-    borderColor: '#FFB800',
-  },
-  timerText: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#000000',
-  },
-  subjectTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#000000',
-    marginBottom: 4,
-  },
-  examTypeTitle: {
-    fontSize: 14,
-    color: '#666666',
-  },
-  instructionsCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 32,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  instructionsTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000000',
-    marginBottom: 12,
-  },
-  instructionsText: {
-    fontSize: 14,
-    color: '#666666',
-    lineHeight: 20,
-    marginBottom: 16,
-  },
-  readyTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000000',
-    marginBottom: 4,
-  },
-  readySubtitle: {
-    fontSize: 14,
-    color: '#666666',
-  },
-  beginButton: {
-    backgroundColor: '#4A90E2',
-    borderRadius: 8,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginHorizontal: 20,
-  },
-  beginButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  // Exam Screen Styles
+  // Exam Session Styles
   examHeader: {
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
@@ -1134,9 +1114,9 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     backgroundColor: '#4A90E2',
-    paddingHorizontal: 16,
+    paddingHorizontal: 25,
     paddingVertical: 8,
-    borderRadius: 6,
+    borderRadius: 30,
   },
   submitButtonText: {
     color: '#FFFFFF',
@@ -1149,15 +1129,10 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   questionCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'transparent',
     borderRadius: 12,
     padding: 20,
     marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
   },
   questionText: {
     fontSize: 16,
@@ -1231,10 +1206,12 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   gridItem: {
-    width: (width - 80) / 10,
-    height: (width - 80) / 10,
-    backgroundColor: '#F0F0F0',
+    width: (width - 60) / 10,
+    height: (width - 60) / 10,
+    backgroundColor: '#D9D9D9',
     borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#5580D4',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
@@ -1243,7 +1220,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#4A90E2',
   },
   gridItemCurrent: {
-    backgroundColor: '#FFB800',
+    backgroundColor: '#fff',
+    borderColor: '#FECB51',
+    borderWidth: 1,
   },
   gridItemCorrect: {
     backgroundColor: '#10B981',
@@ -1257,7 +1236,7 @@ const styles = StyleSheet.create({
     color: '#666666',
   },
   gridItemTextActive: {
-    color: '#FFFFFF',
+    color: '#000',
   },
   navigationButtons: {
     flexDirection: 'row',
@@ -1270,12 +1249,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 12,
     paddingHorizontal: 24,
-    borderRadius: 8,
+    borderRadius: 30,
     flex: 1,
     marginHorizontal: 4,
   },
   backButton: {
-    backgroundColor: '#6C757D',
+    backgroundColor: '#fff',
+    color: '#000',
+    borderColor: '#4A90E2',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 30,
+    flex: 1,
+    marginHorizontal: 4,
+
+    borderWidth: 1,
   },
   nextButton: {
     backgroundColor: '#4A90E2',
@@ -1333,10 +1324,11 @@ const styles = StyleSheet.create({
   },
   viewResultButton: {
     backgroundColor: '#4A90E2',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
+    borderRadius: 30,
+    paddingVertical: 10,
+    paddingHorizontal: 50,
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
   viewResultButtonText: {
@@ -1344,6 +1336,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     marginRight: 8,
+  },
+  viewResultButtonIcon: {
+    backgroundColor: '#fff',
+    borderRadius: 50,
+    padding: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   retakeExamButton: {
     backgroundColor: '#10B981',
@@ -1356,131 +1355,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
-  },
-  // Modal Styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  confirmModal: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 24,
-    width: '100%',
-    maxWidth: 320,
-    alignItems: 'center',
-  },
-  confirmTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000000',
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  confirmMessage: {
-    fontSize: 14,
-    color: '#666666',
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 24,
-  },
-  confirmActions: {
-    flexDirection: 'row',
-    width: '100%',
-  },
-  goBackButton: {
-    flex: 1,
-    backgroundColor: '#F8F9FA',
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-    marginRight: 8,
-  },
-  goBackButtonText: {
-    color: '#666666',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  confirmSubmitButton: {
-    flex: 1,
-    backgroundColor: '#4A90E2',
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-    marginLeft: 8,
-  },
-  confirmSubmitButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  timeUpModal: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 24,
-    width: '100%',
-    maxWidth: 320,
-    alignItems: 'center',
-  },
-  timeUpTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#EF4444',
-    marginBottom: 16,
-  },
-  timeUpMessage: {
-    fontSize: 14,
-    color: '#666666',
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 24,
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
-  modalTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000000',
-    marginLeft: 8,
-  },
-  modalHeaderActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  audioButton: {
-    padding: 8,
-    marginRight: 8,
-  },
-  closeModalButton: {
-    padding: 8,
-  },
-  modalContent: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-  },
-  solutionText: {
-    fontSize: 16,
-    color: '#000000',
-    lineHeight: 24,
   },
   // Review Screen Styles
   reviewHeader: {
@@ -1617,15 +1491,142 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F0F8FF',
-    borderRadius: 8,
+    backgroundColor: '#CBE3FF',
+    borderRadius: 30,
+    width: 200,
     paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: 50,
   },
   reviewSeeExplanationText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#4A90E2',
+    color: '#000',
     marginLeft: 6,
   },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  confirmModal: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 24,
+    width: '100%',
+    maxWidth: 320,
+    alignItems: 'center',
+  },
+  confirmTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#000000',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  confirmMessage: {
+    fontSize: 14,
+    color: '#666666',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  confirmActions: {
+    flexDirection: 'row',
+    width: '100%',
+  },
+  goBackButton: {
+    flex: 1,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  goBackButtonText: {
+    color: '#666666',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  confirmSubmitButton: {
+    flex: 1,
+    backgroundColor: '#4A90E2',
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  confirmSubmitButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  timeUpModal: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 24,
+    width: '100%',
+    maxWidth: 320,
+    alignItems: 'center',
+  },
+  timeUpTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#EF4444',
+    marginBottom: 16,
+  },
+  timeUpMessage: {
+    fontSize: 14,
+    color: '#666666',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  modalTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#000000',
+    marginLeft: 8,
+  },
+  modalHeaderActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  audioButton: {
+    padding: 8,
+    marginRight: 8,
+  },
+  closeModalButton: {
+    padding: 8,
+  },
+  modalContent: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  solutionText: {
+    fontSize: 16,
+    color: '#000000',
+    lineHeight: 24,
+  },
+  
 });

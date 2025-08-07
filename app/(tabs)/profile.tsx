@@ -1,6 +1,7 @@
 import { useAuthStore } from '@/store/authStore';
 import { Ionicons } from '@expo/vector-icons';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { router } from 'expo-router';
 
 export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
@@ -19,9 +20,7 @@ export default function ProfileScreen() {
           style: 'destructive',
           onPress: () => {
             logout();
-            // Navigate to login screen after logout
-            // You might need to adjust this based on your navigation setup
-            // router.replace('/(auth)/login');
+            router.replace('/(auth)/login');
           },
         },
       ],
@@ -98,6 +97,9 @@ export default function ProfileScreen() {
             <Ionicons name="chevron-forward" size={20} color="#94a3b8" />
           </TouchableOpacity>
         </View>
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Text style={styles.logoutButtonText}>Log Out</Text>
+        </TouchableOpacity>
       </ScrollView>
 
   );
@@ -220,5 +222,19 @@ const styles = StyleSheet.create({
     color: '#1E293B',
     fontSize: 16,
     marginLeft: 16,
+  },
+  logoutButton: {
+    marginTop: 24,
+    backgroundColor: 'red',
+    borderRadius: 12,
+    padding: 16,
+    marginHorizontal: 'auto',
+    width: '50%',
+    alignItems: 'center',
+  },
+  logoutButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });

@@ -214,7 +214,6 @@ export default function TopicsScreen() {
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar barStyle="dark-content" backgroundColor="#F8F9FA" />
         
         {/* Title */}
         <Text style={styles.title}>Subjects</Text>
@@ -306,7 +305,7 @@ export default function TopicsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: 'transparent',
   },
   safeArea: {
     flex: 1,
