@@ -3,11 +3,12 @@
 import { useAuthStore } from "@/store/authStore"
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons"
 import { router } from "expo-router"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Image } from "expo-image"
 import { Dimensions, SafeAreaView, StyleSheet, Text, TouchableOpacity, View, ScrollView } from "react-native"
 import Svg, { Circle, G } from "react-native-svg"
 import { ImageBackground } from "react-native"
+import { useUIStore } from "@/store/uiStore"
 
 const { width } = Dimensions.get("window")
 
@@ -28,6 +29,15 @@ const dashboardCards = [
 export default function HomeScreen() {
   const [streakDays] = useState(320)
   const { user } = useAuthStore()
+   const { isHeaderVisible, isBottomNavVisible, setHeaderVisible, setBottomNavVisible } = useUIStore();
+
+   useEffect(() => {
+      // Hide navigation when entering this screen
+   !isHeaderVisible &&   setHeaderVisible(true);
+    
+    !isBottomNavVisible &&  setBottomNavVisible(true);
+      
+    }, []);
 
   const IllustrationIcon = ({ type }: { type: string }) => (
     <Image source={icons[type]} style={{ width: 56, height: 56 }} />

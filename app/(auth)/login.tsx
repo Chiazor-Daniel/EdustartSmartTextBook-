@@ -1,5 +1,6 @@
 import { useLoginMutation } from '@/services/api';
 import { useAuthStore } from '@/store/authStore';
+import { useUIStore } from '@/store/uiStore';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -9,25 +10,39 @@ import {
   Image,
   Keyboard,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
+  Animated
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import Toast from 'react-native-toast-message';
 import { StatusBar } from 'react-native';
+import { CustomAlert } from '../components/custom-alert';
 
 const windowHeight = Dimensions.get('window').height;
 const windowWidth = Dimensions.get('window').width;
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState('danieltari873@gmail.com');
-  const [password, setPassword] = useState('Stri343ng');
+  // const [email, setEmail] = useState('classfiedu@gmail.com');
+  // const [password, setPassword] = useState('8!nibr&p$%');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [agreeToTerms, setAgreeToTerms] = useState(false);
+
+  // Custom Alert State
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({
+    title: '',
+    message: '',
+    type: 'info',
+    onConfirm: null
+  });
 
   useEffect(() => {
     const keyboardWillShowListener = Keyboard.addListener(
@@ -52,71 +67,87 @@ export default function LoginScreen() {
 
   const [login, { isLoading }] = useLoginMutation();
   const { login: setAuth } = useAuthStore();
+
+  const showCustomAlert = (title, message, type = 'info', onConfirm = null) => {
+    setAlertConfig({ title, message, type, onConfirm });
+    setAlertVisible(true);
+  };
+
+  const hideAlert = () => {
+    setAlertVisible(false);
+  };
+
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
  
   const handleLogin = async () => {
+    // Basic validation
+    if (!email || !password) {
+      showCustomAlert(
+        'Missing Information',
+        'Please enter both email and password to continue.',
+        'warning'
+      );
+      return;
+    }
+
+    if (!validateEmail(email)) {
+      showCustomAlert(
+        'Invalid Email',
+        'Please enter a valid email address.',
+        'error'
+      );
+      return;
+    }
+
+    if (!agreeToTerms) {
+      showCustomAlert(
+        'Terms Required',
+        'Please agree to the Privacy Policy & Terms of Service to continue.',
+        'warning'
+      );
+      return;
+    }
+
     try {
       const response = await login({ email, password }).unwrap();
       await setAuth(response.token, response.user);
-      Toast.show({
-        type: 'success',
-        text1: 'Login successful!',
-        position: 'top',
-        visibilityTime: 2000,
-        onHide: () => router.replace('/home'),
-        props: {
-          style: {
-            backgroundColor: '#22C55E',
-            borderRadius: 12,
-            padding: 16,
-            marginHorizontal: 16,
-            marginTop: 40,
-            shadowColor: '#22C55E',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.3,
-            shadowRadius: 8,
-            elevation: 4,
-          },
-          textStyle: {
-            color: '#fff',
-            fontWeight: 'bold',
-            fontSize: 16,
-          }
+      
+      showCustomAlert(
+        'Welcome Back!',
+        'You have been successfully logged in to your account.',
+        'success',
+        () => {
+          hideAlert();
+          router.replace('/home');
         }
-      });
+      );
     } catch (err) {
-      Toast.show({
-        type: 'error',
-        text1: 'Login failed',
-        text2: 'Please check your credentials',
-        position: 'top',
-        visibilityTime: 4000,
-        props: {
-          style: {
-            backgroundColor: '#EF4444',
-            borderRadius: 12,
-            padding: 16,
-            marginHorizontal: 16,
-            marginTop: 40,
-            shadowColor: '#EF4444',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.3,
-            shadowRadius: 8,
-            elevation: 4,
-          },
-          textStyle: {
-            color: '#fff',
-            fontWeight: 'bold',
-            fontSize: 16,
-          }
+      console.error('Login error:', err.message || 'Invalid Credentials');
+      
+      let errorMessage = 'Please check your email and password and try again.';
+      if (err && typeof err === 'object' && err !== null) {
+        if (err.data && err.data.message) {
+          errorMessage = err.data.message;
+        } else if (err.message) {
+          errorMessage = err.message;
         }
-      });
-      console.error('Login error:', err.message || 'invalid Credentials');
+      }
+
+      showCustomAlert(
+        'Login Failed',
+        errorMessage,
+        'error'
+      );
     }
   };
 
   return (
     <View style={styles.container}>
       <StatusBar translucent={true} backgroundColor={'transparent'} />
+      
       {/* Header area - space for logo */}
       <View style={styles.headerSpace}>
        <Image source={require('@/assets/logo-1-png.png')} style={{width: 300, height: 300}}/>
@@ -162,10 +193,15 @@ export default function LoginScreen() {
               </View>
             </View>
 
-            {/* Forgot Password with checkbox */}
+            {/* Terms checkbox */}
             <View style={styles.forgotPasswordContainer}>
-              <TouchableOpacity style={styles.checkboxContainer}>
-                <View style={styles.checkbox} />
+              <TouchableOpacity 
+                style={styles.checkboxContainer}
+                onPress={() => setAgreeToTerms(!agreeToTerms)}
+              >
+                <View style={[styles.checkbox, agreeToTerms && styles.checkboxChecked]}>
+                  {agreeToTerms && <Feather name="check" size={12} color="white" />}
+                </View>
                 <Text style={styles.checkboxText}>I agree to the website </Text>
                 <TouchableOpacity>
                   <Text style={styles.linkText}>Privacy Policy & Terms of Service</Text>
@@ -194,11 +230,23 @@ export default function LoginScreen() {
           </View>
         </View>
       </View>
-      <Image source={require('@/assets/login2.png')} style={{position: 'absolute', bottom:0}} />
-      <Image source={require('@/assets/top.png')} style={{position: 'absolute', top:0}} />
+
+      {/* Background Images */}
+      <Image source={require('@/assets/login2.png')} style={styles.bottomImage} />
+      <Image source={require('@/assets/top.png')} style={styles.topImage} />
 
       {/* Bottom space for illustration */}
       <View style={styles.bottomSpace} />
+
+      {/* Custom Alert Modal */}
+      <CustomAlert
+        visible={alertVisible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+        onClose={hideAlert}
+        onConfirm={alertConfig.onConfirm}
+      />
     </View>
   );
 }
@@ -325,6 +373,12 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     marginRight: 8,
     marginTop: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: '#3B82F6',
+    borderColor: '#3B82F6',
   },
   checkboxText: {
     fontSize: 12,
@@ -372,5 +426,16 @@ const styles = StyleSheet.create({
   },
   bottomSpace: {
     height: windowHeight * 0.15,
+  },
+  // Background Images with proper z-index
+  bottomImage: {
+    position: 'absolute',
+    bottom: 0,
+    zIndex: 1,
+  },
+  topImage: {
+    position: 'absolute',
+    top: 0,
+    zIndex: 1,
   },
 });

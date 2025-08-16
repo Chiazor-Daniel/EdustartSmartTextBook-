@@ -1,22 +1,20 @@
+import { useUIStore } from '@/store/uiStore';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   Dimensions,
+  Image,
   Modal,
   SafeAreaView,
   ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useUIStore } from '@/store/uiStore';
-import { Image } from 'react-native';
-import { router } from 'expo-router';
 import ExamTimerComponent from '../components/timer';
 
 const { width } = Dimensions.get('window');
@@ -27,13 +25,17 @@ const ExamFormScreen = ({ onBeginExam }) => {
   const [selectedSubject, setSelectedSubject] = useState('');
   const [selectedExamType, setSelectedExamType] = useState('');
   const [examTypes] = useState(['JAMB', 'WAEC', 'NECO', 'POST-UTME']);
-  const [examYear, setExamYear] = useState('2025');
+  const [examYear, setExamYear] = useState('');
   const [difficulty, setDifficulty] = useState('Medium');
-  const [timerDuration, setTimerDuration] = useState(20); // in minutes
+  const [timerDuration, setTimerDuration] = useState(30); // in minutes
   const [showDifficultyDropdown, setShowDifficultyDropdown] = useState(false);
   const [showSubjectDropdown, setShowSubjectDropdown] = useState(false);
   const [showExamTypeDropdown, setShowExamTypeDropdown] = useState(false);
-  const [showTimerDropdown, setShowTimerDropdown] = useState(false);
+  const [showYearDropdown, setShowYearDropdown] = useState(false);
+  
+  // Generate array for past 5 years and next 5 years
+  const currentYear = new Date().getFullYear();
+  const yearOptions = Array.from({ length: 11 }, (_, i) => ((currentYear - 5) + i).toString());
   const [loading, setLoading] = useState(false);
 
   const BASE_URL = 'https://class-fi.vercel.app';
@@ -145,6 +147,31 @@ const ExamFormScreen = ({ onBeginExam }) => {
           <View style={styles.welcomeSection}>
             <Text style={styles.welcomeTitle}>Ready to <Text style={styles.testText}>test</Text> your knowledge?</Text>
             <Text style={styles.welcomeTitle}>Fill the form below to generate questions.</Text>
+            
+            {/* <View style={styles.timerSelectionContainer}>
+              <Text style={styles.timerLabel}>Select Duration:</Text>
+              <View style={styles.timerOptions}>
+                {[15, 30, 45, 60].map((minutes) => (
+                  <TouchableOpacity
+                    key={minutes}
+                    style={[
+                      styles.timerOption,
+                      timerDuration === minutes * 60 && styles.timerOptionSelected
+                    ]}
+                    onPress={() => setTimerDuration(minutes * 60)}
+                  >
+                    <Text style={[
+                      styles.timerOptionText,
+                      timerDuration === minutes * 60 && styles.timerOptionTextSelected
+                    ]}>{minutes} min</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <View style={styles.selectedTimeDisplay}>
+                <MaterialCommunityIcons name="clock-outline" size={20} color="#4A90E2" />
+                <Text style={styles.selectedTimeText}>{formatTime(timerDuration)}</Text>
+              </View>
+            </View> */}
           </View>
 
           <View style={styles.formCard}>
@@ -223,14 +250,36 @@ const ExamFormScreen = ({ onBeginExam }) => {
 
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Target Year *</Text>
-              <TextInput
-                style={styles.textInput}
-                value={examYear}
-                onChangeText={setExamYear}
-                keyboardType="numeric"
-                placeholder="Select the year"
-                placeholderTextColor="#999"
-              />
+              <TouchableOpacity
+                style={styles.selectInput}
+                onPress={() => setShowYearDropdown(!showYearDropdown)}
+              >
+                <Text style={[styles.selectText, !examYear && styles.placeholderText]}>
+                  {examYear || 'Select target year'}
+                </Text>
+                <Ionicons 
+                  name={showYearDropdown ? "chevron-up" : "chevron-down"} 
+                  size={16} 
+                  color="#666" 
+                />
+              </TouchableOpacity>
+              
+              {showYearDropdown && (
+                <View style={styles.dropdown}>
+                  {Array.from({ length: 10 }, (_, i) => (2025 + i)).map((year) => (
+                    <TouchableOpacity
+                      key={year}
+                      style={styles.dropdownItem}
+                      onPress={() => {
+                        setExamYear(year.toString());
+                        setShowYearDropdown(false);
+                      }}
+                    >
+                      <Text style={styles.dropdownItemText}>{year}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
             </View>
 
             <View style={styles.inputGroup}>
@@ -267,7 +316,7 @@ const ExamFormScreen = ({ onBeginExam }) => {
               )}
             </View>
 
-            <View style={styles.inputGroup}>
+            {/* <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Timer Duration *</Text>
               <TouchableOpacity
                 style={styles.selectInput}
@@ -299,7 +348,7 @@ const ExamFormScreen = ({ onBeginExam }) => {
                   ))}
                 </View>
               )}
-            </View>
+            </View> */}
 
             <TouchableOpacity 
               style={styles.generateButton} 
@@ -325,8 +374,8 @@ const ExamFormScreen = ({ onBeginExam }) => {
 // Screen 2: Exam Session Screen
 const ExamSessionScreen = ({ examConfig, onRetakeExam }: any) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [userAnswers, setUserAnswers] = useState({});
-  const [selectedAnswer, setSelectedAnswer] = useState(null);
+  const [userAnswers, setUserAnswers] = useState<Record<number, number>>({});
+  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [timeRemaining, setTimeRemaining] = useState(examConfig.timerDuration);
   const [timerActive, setTimerActive] = useState(true);
   const [examCompleted, setExamCompleted] = useState(false);
@@ -339,7 +388,19 @@ const ExamSessionScreen = ({ examConfig, onRetakeExam }: any) => {
   const [currentView, setCurrentView] = useState('exam'); // 'exam', 'results', 'review'
 
   const BASE_URL = 'https://class-fi.vercel.app';
+ const { setHeaderVisible, setBottomNavVisible } = useUIStore();
 
+   useEffect(() => {
+      // Hide navigation when entering this screen
+      setHeaderVisible(false);
+      setBottomNavVisible(false);
+      
+      return () => {
+        // Restore navigation when leaving this screen
+        setHeaderVisible(true);
+        setBottomNavVisible(true);
+      };
+    }, []);
   // Timer effect
   useEffect(() => {
     let interval = null;
@@ -369,8 +430,10 @@ const ExamSessionScreen = ({ examConfig, onRetakeExam }: any) => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleAnswerSelect = (answerIndex) => {
+  const handleAnswerSelect = (answerIndex: number) => {
+    // Always set the selected answer
     setSelectedAnswer(answerIndex);
+    // Update the user answers state
     setUserAnswers(prev => ({
       ...prev,
       [currentQuestionIndex]: answerIndex
@@ -480,16 +543,19 @@ const ExamSessionScreen = ({ examConfig, onRetakeExam }: any) => {
           </View>
           <View style={styles.examHeaderRight}>
             <View style={styles.timerBadge}>
-              <Text style={styles.timerBadgeText}>{formatTime(timeRemaining)}</Text>
+              <View style={styles.clockContainer}>
+                <MaterialCommunityIcons name="clock-outline" size={16} color="#856404" />
+                <Text style={styles.timerBadgeText}>{formatTime(timeRemaining)}</Text>
+              </View>
             </View>
             <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', padding: 0, paddingHorizontal: 0}}>
-          <TouchableOpacity 
-              style={styles.submitButton}
-              onPress={() => setShowSubmitConfirm(true)}
-            >
-              <Text style={styles.submitButtonText}>Submit</Text>
-            </TouchableOpacity>
-        </View>
+              <TouchableOpacity 
+                style={styles.submitButton}
+                onPress={() => setShowSubmitConfirm(true)}
+              >
+                <Text style={styles.submitButtonText}>Submit</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </View>
@@ -502,29 +568,32 @@ const ExamSessionScreen = ({ examConfig, onRetakeExam }: any) => {
             </Text>
             
             <View style={styles.optionsContainer}>
-              {examConfig.questions[currentQuestionIndex]?.options?.map((option, index) => (
-                <TouchableOpacity 
-                  key={index} 
-                  style={[
-                    styles.optionItem,
-                    selectedAnswer === index && styles.optionItemSelected,
-                  ]}
-                  onPress={() => handleAnswerSelect(index)}
-                >
-                  <View style={[
-                    styles.optionIndicator,
-                    selectedAnswer === index && styles.optionIndicatorSelected,
-                  ]}>
-                    <Text style={[
-                      styles.optionLetter,
-                      selectedAnswer === index && styles.optionLetterSelected,
+              {examConfig.questions[currentQuestionIndex]?.options?.map((option, index) => {
+                const isSelected = userAnswers[currentQuestionIndex] === index;
+                return (
+                  <TouchableOpacity 
+                    key={index} 
+                    style={[
+                      styles.optionItem,
+                      isSelected && styles.optionItemSelected,
+                    ]}
+                    onPress={() => handleAnswerSelect(index)}
+                  >
+                    <View style={[
+                      styles.optionIndicator,
+                      isSelected && styles.optionIndicatorSelected,
                     ]}>
-                      {String.fromCharCode(65 + index)}
-                    </Text>
-                  </View>
-                  <Text style={styles.optionText}>{option}</Text>
-                </TouchableOpacity>
-              ))}
+                      <Text style={[
+                        styles.optionLetter,
+                        isSelected && styles.optionLetterSelected,
+                      ]}>
+                        {String.fromCharCode(65 + index)}
+                      </Text>
+                    </View>
+                    <Text style={styles.optionText}>{option}</Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
 
             {/* <TouchableOpacity
@@ -858,8 +927,7 @@ const ExamSessionScreen = ({ examConfig, onRetakeExam }: any) => {
 export default function ExamWiseScreen() {
   const [currentScreen, setCurrentScreen] = useState<'form' | 'timer' | 'session'>('form');
   const [examConfig, setExamConfig] = useState<any>(null);
-  const setIsHeaderVisible = useUIStore(state => state.setHeaderVisible);
-  const setBottomNavVisible = useUIStore(state => state.setBottomNavVisible);
+ 
 
   // useEffect(() => {
   //   const isForm = currentScreen === 'form';
@@ -896,6 +964,11 @@ export default function ExamWiseScreen() {
           year={examConfig.year}
           difficulty={examConfig.difficulty}
           onBegin={handleTimerBegin}
+          duration={examConfig.timerDuration}
+          onDurationChange={(minutes) => setExamConfig({
+            ...examConfig,
+            timerDuration: minutes * 60
+          })}
         />
       )}
       {currentScreen === 'session' && examConfig && (
@@ -1107,10 +1180,67 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginRight: 12,
   },
+  clockContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   timerBadgeText: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
     color: '#856404',
+  },
+  timerSelectionContainer: {
+    marginTop: 24,
+    padding: 16,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+  },
+  timerLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#4A5568',
+    marginBottom: 12,
+  },
+  timerOptions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 16,
+  },
+  timerOption: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  timerOptionSelected: {
+    backgroundColor: '#4A90E2',
+    borderColor: '#4A90E2',
+  },
+  timerOptionText: {
+    fontSize: 14,
+    color: '#4A5568',
+  },
+  timerOptionTextSelected: {
+    color: '#FFFFFF',
+    fontWeight: '500',
+  },
+  selectedTimeDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+  },
+  selectedTimeText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#4A90E2',
   },
   submitButton: {
     backgroundColor: '#4A90E2',

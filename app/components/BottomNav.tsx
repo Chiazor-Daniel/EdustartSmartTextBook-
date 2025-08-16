@@ -97,14 +97,14 @@ const BottomNavigation = () => {
 const styles = StyleSheet.create({
   safeArea: {
     backgroundColor: 'white',
+    height: 75,
   },
   navigationContainer: {
     flexDirection: 'row',
     paddingHorizontal: 8,
     justifyContent: 'space-around',
     alignItems: 'center',
-    height: 75,
-    backgroundColor: 'white',
+    // height: 75,
   },
   navItem: {
     flex: 1,

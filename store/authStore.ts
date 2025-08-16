@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
+import { useUIStore } from './uiStore';
 
 type User = {
   id: number;
@@ -43,6 +44,8 @@ export const useAuthStore = create<AuthState>()(
           await AsyncStorage.setItem('auth-token', token);
           await AsyncStorage.setItem('auth-user', JSON.stringify(userData));
           set({ token, user: userData });
+          // Reset UI state when logging in
+          useUIStore.getState().resetUIState();
         } catch (error) {
           console.error('Error storing auth data:', error);
           throw error;

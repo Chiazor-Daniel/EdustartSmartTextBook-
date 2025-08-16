@@ -9,18 +9,20 @@ import {
   Image,
   Keyboard,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
+  Animated
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import Toast from 'react-native-toast-message';
-
+import { CustomAlert } from '../components/custom-alert';
 const windowHeight = Dimensions.get('window').height;
 const windowWidth = Dimensions.get('window').width;
+
 
 export default function SignupScreen() {
   const [fullName, setFullName] = useState('');
@@ -33,6 +35,15 @@ export default function SignupScreen() {
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
+
+  // Custom Alert State
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({
+    title: '',
+    message: '',
+    type: 'info',
+    onConfirm: null
+  });
 
   const [signup] = useSignupMutation();
 
@@ -56,56 +67,81 @@ export default function SignupScreen() {
     return emailRegex.test(email);
   };
 
+  const showCustomAlert = (title, message, type = 'info', onConfirm = null) => {
+    setAlertConfig({ title, message, type, onConfirm });
+    setAlertVisible(true);
+  };
+
+  const hideAlert = () => {
+    setAlertVisible(false);
+  };
+
   const handleSignUp = async () => {
+    // Check if user agreed to terms
+    if (!agreeToTerms) {
+      showCustomAlert(
+        'Terms Required',
+        'Please agree to the Privacy Policy & Terms of Service to continue.',
+        'warning'
+      );
+      return;
+    }
+
     if (!fullName || !gender || !email || !password || !confirmPassword) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Please fill in all required fields',
-      });
+      showCustomAlert(
+        'Missing Information',
+        'Please fill in all required fields to create your account.',
+        'error'
+      );
       return;
     }
+
     if (!validateEmail(email)) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Please enter a valid email address',
-      });
+      showCustomAlert(
+        'Invalid Email',
+        'Please enter a valid email address.',
+        'error'
+      );
       return;
     }
+
     if (email.length > 254) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Email must be less than 254 characters',
-      });
+      showCustomAlert(
+        'Email Too Long',
+        'Email must be less than 254 characters.',
+        'error'
+      );
       return;
     }
+
     if (fullName.length > 255) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Full name must be less than 255 characters',
-      });
+      showCustomAlert(
+        'Name Too Long',
+        'Full name must be less than 255 characters.',
+        'error'
+      );
       return;
     }
+
     if (password !== confirmPassword) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Passwords do not match',
-      });
+      showCustomAlert(
+        'Passwords Don\'t Match',
+        'Please make sure both password fields match.',
+        'error'
+      );
       return;
     }
+
     const passwordRegex = /^(?=.*[A-Z])(?=.*\d).{6,}$/;
     if (!passwordRegex.test(password)) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Password must contain a capital letter, a number, and be minimum of 6 characters',
-      });
+      showCustomAlert(
+        'Weak Password',
+        'Password must contain a capital letter, a number, and be minimum of 6 characters.',
+        'error'
+      );
       return;
     }
+
     setIsLoading(true);
     try {
       const signupData = {
@@ -117,193 +153,216 @@ export default function SignupScreen() {
       };
       console.log('POST https://api.class-fi.com/organization/users/signup/student/', signupData);
       const response = await signup(signupData).unwrap();
-      Toast.show({
-        type: 'success',
-        text1: 'Account created successfully!',
-        text2: 'Please check your email to verify your account',
-      });
-      setTimeout(() => {
-        router.replace('/(auth)/login');
-      }, 2000);
+      
+      showCustomAlert(
+        'Account Created!',
+        'Your account has been created successfully. Please check your email to verify your account.',
+        'success',
+        () => {
+          hideAlert();
+          router.replace('/(auth)/login');
+        }
+      );
     } catch (error: any) {
       console.log('Signup Error:', error);
+    
       let errorMessage = 'Signup failed. Please try again.';
+    
       if (error && typeof error === 'object' && error !== null) {
-        if (error.data && error.data.message) {
-          errorMessage = error.data.message;
-        } else if (error.data && error.data.errors) {
-          errorMessage = Object.values(error.data.errors).join('\n');
+        if (error.data) {
+          // If there are field-specific errors (like email, password, recaptcha_token)
+          if (typeof error.data === 'object') {
+            // Collect all array messages into one string
+            const messages = Object.values(error.data)
+              .flat() // flatten arrays
+              .join('\n');
+            if (messages) {
+              errorMessage = messages;
+            }
+          }
+          // If there's a generic message key
+          if (error.data.message) {
+            errorMessage = error.data.message;
+          }
         }
       }
-      Toast.show({
-        type: 'error',
-        text1: 'Signup Error',
-        text2: errorMessage,
-      });
-    } finally {
+    
+      showCustomAlert(
+        'Signup Failed',
+        errorMessage,
+        'error'
+      );
+    }
+     finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <KeyboardAwareScrollView 
-      style={styles.container}
-      contentContainerStyle={styles.scrollContainer}
-      showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
-      enableOnAndroid={true}
-      extraScrollHeight={20}
-    >
-      <Toast />
-      
-      {/* Header area - space for logo */}
-      <View style={styles.headerSpace}>
-       <Image source={require('@/assets/logo-1-png.png')} style={{width: 300, height: 300}}/>
-      </View>
+    <View style={styles.container}>
+      <KeyboardAwareScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        enableOnAndroid={true}
+        extraScrollHeight={20}
+      >
+        {/* Header area - space for logo */}
+        <View style={styles.headerSpace}>
+         <Image source={require('@/assets/logo-1-png.png')} style={{width: 300, height: 300}}/>
+        </View>
 
-      {/* Main content area */}
-      <View style={styles.mainContent}>
-        {/* Modal Card */}
-        <View style={styles.modalCard}>
-          <Text style={styles.mainTitle}>Create an Account</Text>
-          <Text style={styles.subtitle}>
-            Discover a smarter way to learn with interactive textbooks for a 21st-century education.
-          </Text>
-
-          {/* Form */}
-          <View style={styles.formContainer}>
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Full Name</Text>
-              <TextInput
-                style={styles.input}
-                value={fullName}
-                onChangeText={setFullName}
-                placeholder=""
-                autoCapitalize="words"
-              />
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Gender</Text>
-              <View style={styles.genderRow}>
-                <TouchableOpacity
-                  style={[styles.genderOption, gender === 'Male' && styles.genderOptionSelected]}
-                  onPress={() => setGender('Male')}
-                >
-                  <Text style={[styles.genderOptionText, gender === 'Male' && styles.genderOptionTextSelected]}>Male</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.genderOption, gender === 'Female' && styles.genderOptionSelected]}
-                  onPress={() => setGender('Female')}
-                >
-                  <Text style={[styles.genderOptionText, gender === 'Female' && styles.genderOptionTextSelected]}>Female</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.genderOption, gender === 'Other' && styles.genderOptionSelected]}
-                  onPress={() => setGender('Other')}
-                >
-                  <Text style={[styles.genderOptionText, gender === 'Other' && styles.genderOptionTextSelected]}>Other</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-            
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Email Address</Text>
-              <TextInput
-                style={styles.input}
-                value={email}
-                onChangeText={setEmail}
-                placeholder=""
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-            </View>
-            
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Password</Text>
-              <View style={styles.passwordContainer}>
-                <TextInput
-                  style={styles.passwordInput}
-                  value={password}
-                  onChangeText={setPassword}
-                  placeholder=""
-                  secureTextEntry={!showPassword}
-                />
-                <TouchableOpacity
-                  style={styles.eyeIcon}
-                  onPress={() => setShowPassword(!showPassword)}
-                >
-                  <Feather name={showPassword ? "eye" : "eye-off"} size={20} color="#666" />
-                </TouchableOpacity>
-              </View>
-            </View>
-            
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Re-enter Password</Text>
-              <View style={styles.passwordContainer}>
-                <TextInput
-                  style={styles.passwordInput}
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  placeholder=""
-                  secureTextEntry={!showConfirmPassword}
-                />
-                <TouchableOpacity
-                  style={styles.eyeIcon}
-                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                >
-                  <Feather name={showConfirmPassword ? "eye" : "eye-off"} size={20} color="#666" />
-                </TouchableOpacity>
-              </View>
-            </View>
-            
-            <Text style={styles.passwordRequirements}>
-              Password must contain a <Text style={styles.bold}>capital letter</Text>, a <Text style={styles.bold}>number</Text>, and be minimum of <Text style={styles.bold}>6 characters</Text>.
+        {/* Main content area */}
+        <View style={styles.mainContent}>
+          {/* Modal Card */}
+          <View style={styles.modalCard}>
+            <Text style={styles.mainTitle}>Create an Account</Text>
+            <Text style={styles.subtitle}>
+              Discover a smarter way to learn with interactive textbooks for a 21st-century education.
             </Text>
 
-            {/* Terms and conditions checkbox */}
-            <View style={styles.termsContainer}>
-              <TouchableOpacity 
-                style={styles.checkboxContainer}
-                onPress={() => setAgreeToTerms(!agreeToTerms)}
-              >
-                <View style={[styles.checkbox, agreeToTerms && styles.checkboxChecked]}>
-                  {agreeToTerms && <Feather name="check" size={12} color="white" />}
+            {/* Form */}
+            <View style={styles.formContainer}>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Full Name</Text>
+                <TextInput
+                  style={styles.input}
+                  value={fullName}
+                  onChangeText={setFullName}
+                  placeholder=""
+                  autoCapitalize="words"
+                />
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Gender</Text>
+                <View style={styles.genderRow}>
+                  <TouchableOpacity
+                    style={[styles.genderOption, gender === 'Male' && styles.genderOptionSelected]}
+                    onPress={() => setGender('Male')}
+                  >
+                    <Text style={[styles.genderOptionText, gender === 'Male' && styles.genderOptionTextSelected]}>Male</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.genderOption, gender === 'Female' && styles.genderOptionSelected]}
+                    onPress={() => setGender('Female')}
+                  >
+                    <Text style={[styles.genderOptionText, gender === 'Female' && styles.genderOptionTextSelected]}>Female</Text>
+                  </TouchableOpacity>
                 </View>
-                <Text style={styles.checkboxText}>I agree to the website </Text>
-                <TouchableOpacity>
-                  <Text style={styles.linkText}>Privacy Policy & Terms of Service</Text>
+              </View>
+              
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Email Address</Text>
+                <TextInput
+                  style={styles.input}
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder=""
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+              </View>
+              
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Password</Text>
+                <View style={styles.passwordContainer}>
+                  <TextInput
+                    style={styles.passwordInput}
+                    value={password}
+                    onChangeText={setPassword}
+                    placeholder=""
+                    secureTextEntry={!showPassword}
+                  />
+                  <TouchableOpacity
+                    style={styles.eyeIcon}
+                    onPress={() => setShowPassword(!showPassword)}
+                  >
+                    <Feather name={showPassword ? "eye" : "eye-off"} size={20} color="#666" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+              
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Re-enter Password</Text>
+                <View style={styles.passwordContainer}>
+                  <TextInput
+                    style={styles.passwordInput}
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                    placeholder=""
+                    secureTextEntry={!showConfirmPassword}
+                  />
+                  <TouchableOpacity
+                    style={styles.eyeIcon}
+                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    <Feather name={showConfirmPassword ? "eye" : "eye-off"} size={20} color="#666" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+              
+              <Text style={styles.passwordRequirements}>
+                Password must contain a <Text style={styles.bold}>capital letter</Text>, a <Text style={styles.bold}>number</Text>, and be minimum of <Text style={styles.bold}>6 characters</Text>.
+              </Text>
+
+              {/* Terms and conditions checkbox */}
+              <View style={styles.termsContainer}>
+                <TouchableOpacity 
+                  style={styles.checkboxContainer}
+                  onPress={() => setAgreeToTerms(!agreeToTerms)}
+                >
+                  <View style={[styles.checkbox, agreeToTerms && styles.checkboxChecked]}>
+                    {agreeToTerms && <Feather name="check" size={12} color="white" />}
+                  </View>
+                  <Text style={styles.checkboxText}>I agree to the website </Text>
+                  <TouchableOpacity>
+                    <Text style={styles.linkText}>Privacy Policy & Terms of Service</Text>
+                  </TouchableOpacity>
                 </TouchableOpacity>
+              </View>
+              
+              <TouchableOpacity
+                style={styles.signupButton}
+                onPress={handleSignUp}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="white" />
+                ) : (
+                  <Text style={styles.signupButtonText}>Sign Up</Text>
+                )}
               </TouchableOpacity>
-            </View>
-            
-            <TouchableOpacity
-              style={styles.signupButton}
-              onPress={handleSignUp}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator color="white" />
-              ) : (
-                <Text style={styles.signupButtonText}>Sign Up</Text>
-              )}
-            </TouchableOpacity>
-            
-            <View style={styles.loginContainer}>
-              <Text style={styles.loginText}>Already have an account? </Text>
-              <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
-                <Text style={styles.loginLink}>Log In</Text>
-              </TouchableOpacity>
+              
+              <View style={styles.loginContainer}>
+                <Text style={styles.loginText}>Already have an account? </Text>
+                <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
+                  <Text style={styles.loginLink}>Log In</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </View>
-      </View>
 
-      {/* Bottom space for illustration */}
-      <View style={styles.bottomSpace} />
-      <Image source={require('@/assets/login2.png')} style={{position: 'absolute', bottom:0}} />
-      <Image source={require('@/assets/top.png')} style={{position: 'absolute', top:0}} />
-    </KeyboardAwareScrollView>
+        {/* Bottom space for illustration */}
+        <View style={styles.bottomSpace} />
+      </KeyboardAwareScrollView>
+
+      {/* Background Images */}
+      <Image source={require('@/assets/login2.png')} style={styles.bottomImage} />
+      <Image source={require('@/assets/top.png')} style={styles.topImage} />
+
+      {/* Custom Alert Modal */}
+      <CustomAlert
+        visible={alertVisible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+        onClose={hideAlert}
+        onConfirm={alertConfig.onConfirm}
+      />
+    </View>
   );
 }
 
@@ -311,7 +370,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    position: 'relative',
+  },
+  scrollView: {
+    flex: 1,
   },
   scrollContainer: {
     flexGrow: 1,
@@ -522,5 +583,100 @@ const styles = StyleSheet.create({
   },
   bottomSpace: {
     height: windowHeight * 0.1,
+  },
+  // Background Images with proper z-index
+  bottomImage: {
+    position: 'absolute',
+    bottom: 0,
+    zIndex: 1,
+  },
+  topImage: {
+    position: 'absolute',
+    top: 0,
+    zIndex: 1,
+  },
+  // Custom Alert Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  alertContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 0,
+    width: '100%',
+    maxWidth: 340,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 25,
+    elevation: 10,
+  },
+  alertContent: {
+    padding: 24,
+    alignItems: 'center',
+  },
+  iconContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  alertTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  alertMessage: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 24,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  alertButtons: {
+    flexDirection: 'row',
+    width: '100%',
+    gap: 12,
+  },
+  alertButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#F3F4F6',
+  },
+  confirmButton: {
+    backgroundColor: '#3B82F6',
+  },
+  singleButton: {
+    backgroundColor: '#3B82F6',
+  },
+  cancelButtonText: {
+    color: '#6B7280',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  confirmButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  singleButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    fontSize: 14,
   },
 });

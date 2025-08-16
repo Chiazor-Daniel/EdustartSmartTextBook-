@@ -98,6 +98,7 @@ export const api = createApi({
   baseQuery: fetchBaseQuery({ 
     baseUrl: 'https://api.class-fi.com/',
     prepareHeaders: (headers) => {
+      headers.set('no-recaptcha-token', 'true');
       const token = useAuthStore.getState().token;
       if (token) {
         headers.set('Authorization', `Bearer ${token}`);

@@ -4,7 +4,6 @@ import { Feather, Ionicons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as ScreenOrientation from 'expo-screen-orientation';
-import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -24,6 +23,7 @@ import {
 } from 'react-native';
 import WebView from 'react-native-webview';
 import FloatingAI from '../../../../components/FloatingAI';
+import { StatusBar } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -41,6 +41,7 @@ const SimulationScreen = () => {
   const [isMuted, setIsMuted] = useState(false);
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [isAudioLoading, setIsAudioLoading] = useState(false);
+  const { setHeaderVisible, setBottomNavVisible } = useUIStore();
   const [activeTab, setActiveTab] = useState('Topics');
   const [isModelLoaded, setIsModelLoaded] = useState(false);
   const [isWebViewReady, setIsWebViewReady] = useState(false);
@@ -48,6 +49,19 @@ const SimulationScreen = () => {
   const [isWebViewMounted, setIsWebViewMounted] = useState(false);
   const [isPanelVisible, setIsPanelVisible] = useState(false);
   const panelAnimation = useRef(new Animated.Value(0)).current;
+
+  // Hide navigation elements when component mounts
+  useEffect(() => {
+    // Hide navigation when entering the screen
+    setHeaderVisible(false);
+    setBottomNavVisible(false);
+
+    // Restore navigation when leaving the screen
+    return () => {
+      setHeaderVisible(true);
+      setBottomNavVisible(true);
+    };
+  }, []); // Empty dependency array means this runs once when mounted
 
   // API calls
   const { data: subtopicsData } = useGetSubtopicsQuery({ 
@@ -68,8 +82,20 @@ const SimulationScreen = () => {
 
   const currentCard = cardsData?.results?.[currentCardIndex];
   const webviewRef = useRef<WebView>(null);
-  const setHeaderVisible = useUIStore(state => state.setHeaderVisible);
   const lastLoadedModel = useRef<string | null>(null);
+
+  // Handle navigation visibility when fullscreen changes
+  useEffect(() => {
+    // Hide navigation when entering this screen
+    setHeaderVisible(false);
+    setBottomNavVisible(false);
+    
+    return () => {
+      // Restore navigation when leaving this screen
+      setHeaderVisible(true);
+      setBottomNavVisible(true);
+    };
+  }, []); // Only run when component mounts/unmounts
 
   // Handle subtopic selection
   const handleSubtopicSelect = useCallback((subtopicId: number) => {
@@ -132,11 +158,9 @@ const SimulationScreen = () => {
       if (newFullscreenState) {
         await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
         Platform.OS === 'android' && RNStatusBar.setHidden(true);
-        setHeaderVisible(false);
       } else {
         await ScreenOrientation.unlockAsync();
         Platform.OS === 'android' && RNStatusBar.setHidden(false);
-        setHeaderVisible(true);
       }
     } catch (error) {
       console.error('Error changing screen orientation:', error);
@@ -149,7 +173,6 @@ const SimulationScreen = () => {
       if (sound) sound.unloadAsync();
       ScreenOrientation.unlockAsync();
       Platform.OS === 'android' && RNStatusBar.setHidden(false);
-      setHeaderVisible(true);
     };
   }, []);
 
@@ -313,6 +336,7 @@ const SimulationScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar style="dark" backgroundColor='#ooo'/>
       {/* Fullscreen Mode */}
       {isFullscreen && currentCard?.verge3d_file && (
         <View style={styles.fullscreenContainer}>
@@ -734,7 +758,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#121212',
   },
   simulationContainer: {
-    height: 400,
+    height: 500,
     backgroundColor: '#121212',
     borderBottomWidth: 1,
     borderBottomColor: '#333',

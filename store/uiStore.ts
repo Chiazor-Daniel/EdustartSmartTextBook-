@@ -6,6 +6,8 @@ interface UIState {
 
   isBottomNavVisible: boolean;
   setBottomNavVisible: (visible: boolean) => void;
+
+  resetUIState: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -14,4 +16,6 @@ export const useUIStore = create<UIState>((set) => ({
 
   isBottomNavVisible: true,
   setBottomNavVisible: (visible) => set({ isBottomNavVisible: visible }),
+
+  resetUIState: () => set({ isHeaderVisible: true, isBottomNavVisible: true }),
 }));

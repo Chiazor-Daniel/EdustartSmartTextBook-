@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import { Feather, Ionicons } from '@expo/vector-icons';
 
 const DashboardScreen = ({ navigation }: { navigation: any }) => {
+  
   return (
     <View style={styles.container}>
       

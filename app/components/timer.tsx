@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
   Dimensions,
   ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
@@ -18,13 +18,32 @@ type ExamTimerProps = {
   year: string | number;
   difficulty: string;
   onBegin: () => void;
+  duration: number;
+  onDurationChange: (minutes: number) => void;
 };
 
-const ExamTimerComponent = ({ timeDisplay = "0:00", subject, examType, year, difficulty, onBegin }: ExamTimerProps) => {
+const ExamTimerComponent = ({ 
+  timeDisplay = "0:00", 
+  subject, 
+  examType, 
+  year, 
+  difficulty, 
+  onBegin,
+  duration,
+  onDurationChange 
+}: ExamTimerProps) => {
   const [showDropdown, setShowDropdown] = useState(false);
+  const durations = [15, 30, 45, 60, 90, 120]; // Available durations in minutes
 
   const handleBegin = () => {
     if (onBegin) onBegin();
+  };
+
+  const formatDuration = (mins: number) => {
+    if (mins < 60) return `${mins} mins`;
+    const hours = Math.floor(mins / 60);
+    const minutes = mins % 60;
+    return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
   };
 
   return (
@@ -33,8 +52,28 @@ const ExamTimerComponent = ({ timeDisplay = "0:00", subject, examType, year, dif
       <Text style={styles.headerText}>Take an Exam</Text>
       
       {/* Set Timer Section */}
-      
-      
+      <View style={styles.timerSelectionContainer}>
+        <Text style={styles.sectionTitle}>Select Duration</Text>
+        <View style={styles.durationGrid}>
+          {durations.map((mins) => (
+            <TouchableOpacity
+              key={mins}
+              style={[
+                styles.durationOption,
+                duration === mins * 60 && styles.durationOptionSelected
+              ]}
+              onPress={() => onDurationChange(mins)}
+            >
+              <Text style={[
+                styles.durationText,
+                duration === mins * 60 && styles.durationTextSelected
+              ]}>
+                {formatDuration(mins)}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
 
       {/* Circular Timer */}
       <View style={styles.timerContainer}>
@@ -118,8 +157,88 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: 24,
-    paddingTop: 20,
+    paddingHorizontal: 20,
+  },
+  timerSelectionContainer: {
+    marginTop: 24,
+    padding: 16,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 16,
+  },
+  durationGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    justifyContent: 'space-between',
+  },
+  durationOption: {
+    width: '30%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    padding: 12,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  durationOptionSelected: {
+    backgroundColor: '#4A90E2',
+    borderColor: '#4A90E2',
+  },
+  durationText: {
+    fontSize: 14,
+    color: '#4B5563',
+    fontWeight: '500',
+  },
+  durationTextSelected: {
+    color: '#FFFFFF',
+  },
+  timerSelectionContainer: {
+    marginVertical: 16,
+    padding: 16,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+  },
+  timerLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#4A5568',
+    marginBottom: 12,
+  },
+  timerOptions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  timerOption: {
+    flex: 1,
+    minWidth: '22%',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    alignItems: 'center',
+  },
+  timerOptionSelected: {
+    backgroundColor: '#4A90E2',
+    borderColor: '#4A90E2',
+  },
+  timerOptionText: {
+    fontSize: 14,
+    color: '#4A5568',
+  },
+  timerOptionTextSelected: {
+    color: '#FFFFFF',
+    fontWeight: '500',
   },
   headerText: {
     fontSize: 16,

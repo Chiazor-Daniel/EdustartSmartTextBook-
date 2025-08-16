@@ -46,7 +46,7 @@ export default function RootLayout() {
           animation: 'slide_from_right',
           gestureEnabled: true,
           contentStyle: { backgroundColor: 'transparent' },
-          animationDuration: 200,
+          animationDuration: 100,
         }}
       >
         <Stack.Screen name="welcome" />
