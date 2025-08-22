@@ -1,5 +1,6 @@
 import { useUIStore } from '@/store/uiStore';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Audio } from 'expo-av';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
@@ -17,20 +18,25 @@ import {
 } from 'react-native';
 import ExamTimerComponent from '../components/timer';
 
+interface Question {
+  question: string;
+  options: string[];  // Simplified to only accept string arrays
+  correctAnswer: string;
+}
+
 const { width } = Dimensions.get('window');
 
 // Screen 1: Exam Form/Setup Screen
 const ExamFormScreen = ({ onBeginExam }) => {
   const [availableSubjects, setAvailableSubjects] = useState(['Physics', 'Chemistry', 'Biology', 'Mathematics']);
   const [selectedSubject, setSelectedSubject] = useState('');
-  const [selectedExamType, setSelectedExamType] = useState('');
-  const [examTypes] = useState(['JAMB', 'WAEC', 'NECO', 'POST-UTME']);
+  // Exam types removed as per backend requirements
   const [examYear, setExamYear] = useState('');
   const [difficulty, setDifficulty] = useState('Medium');
-  const [timerDuration, setTimerDuration] = useState(30); // in minutes
+  const [timerDuration, setTimerDuration] = useState<number | 'No Timer'>(30); // in minutes or 'No Timer'
   const [showDifficultyDropdown, setShowDifficultyDropdown] = useState(false);
   const [showSubjectDropdown, setShowSubjectDropdown] = useState(false);
-  const [showExamTypeDropdown, setShowExamTypeDropdown] = useState(false);
+  // Exam type dropdown removed as per backend requirements
   const [showYearDropdown, setShowYearDropdown] = useState(false);
   
   // Generate array for past 5 years and next 5 years
@@ -38,9 +44,9 @@ const ExamFormScreen = ({ onBeginExam }) => {
   const yearOptions = Array.from({ length: 11 }, (_, i) => ((currentYear - 5) + i).toString());
   const [loading, setLoading] = useState(false);
 
-  const BASE_URL = 'https://class-fi.vercel.app';
+  const BASE_URL = 'https://class-fi.vercel.app'; // Replace with your actual base URL
   const difficultyOptions = ['Easy', 'Medium', 'Hard'];
-  const timerOptions = [20, 30, 45, 60]; // minutes
+  const timerOptions = ['No Timer', 20, 30, 45, 60]; // minutes or 'No Timer'
 
   useEffect(() => {
     fetchSubjects();
@@ -62,22 +68,23 @@ const ExamFormScreen = ({ onBeginExam }) => {
   };
 
   const handleBeginExam = async () => {
-    if (!selectedSubject || !selectedExamType) {
-      Alert.alert('Error', 'Please select both subject and exam type');
+    if (!selectedSubject || !examYear || !difficulty) {
+      Alert.alert('Error', 'Subject, year, and difficulty are required');
       return;
     }
 
     setLoading(true);
     try {
-      // Generate exam questions
       const response = await fetch(`${BASE_URL}/api/generate-questions`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify({
           subject: selectedSubject,
-          examType: selectedExamType,
           year: parseInt(examYear),
-          difficulty: difficulty,
+          difficulty: difficulty
         }),
       });
       
@@ -108,10 +115,9 @@ const ExamFormScreen = ({ onBeginExam }) => {
 
       const examConfig = {
         subject: selectedSubject,
-        examType: selectedExamType,
         year: examYear,
         difficulty: difficulty,
-        timerDuration: timerDuration * 60, // convert to seconds
+        timerDuration: timerDuration === 'No Timer' ? 0 : timerDuration * 60, // convert to seconds or 0 for no timer
         questions: examQuestions
       };
 
@@ -180,39 +186,7 @@ const ExamFormScreen = ({ onBeginExam }) => {
               <Text style={styles.cardTitle}>Generate Mock Exam</Text>
             </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Exam Type *</Text>
-              <TouchableOpacity
-                style={styles.selectInput}
-                onPress={() => setShowExamTypeDropdown(!showExamTypeDropdown)}
-              >
-                <Text style={[styles.selectText, !selectedExamType && styles.placeholderText]}>
-                  {selectedExamType || 'Select exam type (e.g jamb, waec etc)'}
-                </Text>
-                <Ionicons 
-                  name={showExamTypeDropdown ? "chevron-up" : "chevron-down"} 
-                  size={16} 
-                  color="#666" 
-                />
-              </TouchableOpacity>
-              
-              {showExamTypeDropdown && (
-                <View style={styles.dropdown}>
-                  {examTypes.map((type, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      style={styles.dropdownItem}
-                      onPress={() => {
-                        setSelectedExamType(type);
-                        setShowExamTypeDropdown(false);
-                      }}
-                    >
-                      <Text style={styles.dropdownItemText}>{type}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
-            </View>
+            {/* Exam type selection removed as per backend requirements */}
 
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Subject *</Text>
@@ -266,7 +240,7 @@ const ExamFormScreen = ({ onBeginExam }) => {
               
               {showYearDropdown && (
                 <View style={styles.dropdown}>
-                  {Array.from({ length: 10 }, (_, i) => (2025 + i)).map((year) => (
+                  {[2025, 2026].map((year) => (
                     <TouchableOpacity
                       key={year}
                       style={styles.dropdownItem}
@@ -388,7 +362,7 @@ const ExamSessionScreen = ({ examConfig, onRetakeExam }: any) => {
   const [currentView, setCurrentView] = useState('exam'); // 'exam', 'results', 'review'
 
   const BASE_URL = 'https://class-fi.vercel.app';
- const { setHeaderVisible, setBottomNavVisible } = useUIStore();
+  const { setHeaderVisible, setBottomNavVisible } = useUIStore();
 
    useEffect(() => {
       // Hide navigation when entering this screen
@@ -469,55 +443,104 @@ const ExamSessionScreen = ({ examConfig, onRetakeExam }: any) => {
     setShowSubmitConfirm(false);
   };
 
-  const getSolution = async (question) => {
+  const getSolution = async (question: Question) => {
     setLoading(true);
     try {
+      const requestPayload = {
+        question: question.question,
+        options: question.options,  // Already string[] from updated interface
+        correctAnswer: question.correctAnswer
+      };
+
       const response = await fetch(`${BASE_URL}/api/solve-question`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          question: question.question,
-          options: question.options,
-          correctAnswer: question.correctAnswer,
-        }),
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(requestPayload),
       });
       
       if (response.ok) {
         const solutionData = await response.json();
-        setSolution(solutionData.explanation);
+        if (solutionData && solutionData.explanation) {
+          setSolution(solutionData.explanation);
+        } else {
+          console.error('Invalid solution data:', solutionData);
+          setSolution(`The correct answer is "${question.correctAnswer}". Unable to get detailed explanation.`);
+        }
       } else {
-        setSolution(`The correct answer is "${question.correctAnswer}". This is a fundamental concept that requires understanding of basic principles.`);
+        const errorData = await response.text();
+        console.error('API Error:', response.status, errorData);
+        setSolution(`The correct answer is "${question.correctAnswer}". Server error: ${response.status}`);
       }
       setShowSolution(true);
     } catch (error) {
       console.error('Failed to get solution:', error);
-      setSolution(`The correct answer is "${question.correctAnswer}". This is a fundamental concept that requires understanding of basic principles.`);
+      setSolution(`The correct answer is "${question.correctAnswer}". Network error occurred.`);
       setShowSolution(true);
     } finally {
       setLoading(false);
     }
   };
 
-  const playAudioExplanation = async (explanationText) => {
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  const playAudioExplanation = async (explanationText: string) => {
     try {
+      // If already playing, stop and unload previous sound
+      if (sound) {
+        await sound.stopAsync();
+        await sound.unloadAsync();
+        setSound(null);
+        setIsPlaying(false);
+        return;
+      }
+
+      setAudioLoading(true);
       const response = await fetch(`${BASE_URL}/api/generate-audio`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify({ explanation: explanationText }),
       });
 
       const audioData = await response.json();
 
-      if (audioData.audioDataUri) {
-        console.log('Audio would play here');
-        // Audio playback logic would go here
-      } else {
-        console.error('API did not return audio data.');
-        alert('Audio unavailable.');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate audio');
       }
+
+      if (!audioData.audioDataUri) {
+        throw new Error('No audio data received from server');
+      }
+
+      const newSound = new Audio.Sound();
+      await newSound.loadAsync({ uri: audioData.audioDataUri });
+      
+      // Add status update listener
+      newSound.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded) {
+          setIsPlaying(status.isPlaying);
+          if (status.didJustFinish) {
+            setIsPlaying(false);
+            setSound(null);
+          }
+        }
+      });
+
+      setSound(newSound);
+      await newSound.playAsync();
+      setIsPlaying(true);
     } catch (error) {
       console.error('Failed to generate or play audio:', error);
-      alert('Failed to generate or play audio.');
+      Alert.alert('Error', 'Failed to generate or play audio explanation.');
+    } finally {
+      setAudioLoading(false);
     }
   };
 
@@ -538,7 +561,7 @@ const ExamSessionScreen = ({ examConfig, onRetakeExam }: any) => {
         <View style={styles.examHeaderContent}>
           <View style={styles.examInfo}>
             <Text style={styles.examSubject}>{examConfig.subject}</Text>
-            <Text style={styles.examDetails}>{examConfig.examType} • {examConfig.year} Exam</Text>
+            <Text style={styles.examDetails}>{examConfig.year} Exam</Text>
             <Text style={styles.questionNumber}>Question {currentQuestionIndex + 1}/{examConfig.questions.length}</Text>
           </View>
           <View style={styles.examHeaderRight}>
@@ -596,13 +619,22 @@ const ExamSessionScreen = ({ examConfig, onRetakeExam }: any) => {
               })}
             </View>
 
-            {/* <TouchableOpacity
-              style={styles.seeExplanationButton}
-              onPress={() => getSolution(examConfig.questions[currentQuestionIndex])}
-            >
-              <MaterialCommunityIcons name="lightbulb-outline" size={16} color="#4A90E2" />
-              <Text style={styles.seeExplanationText}>See Explanation</Text>
-            </TouchableOpacity> */}
+            {/* Show explanation button for all questions */}
+            <TouchableOpacity
+                style={styles.seeExplanationButton}
+                onPress={() => getSolution(examConfig.questions[currentQuestionIndex])}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator size="small" color="#4A90E2" />
+                ) : (
+                  <>
+                    <MaterialCommunityIcons name="lightbulb-outline" size={16} color="#4A90E2" />
+                    <Text style={styles.seeExplanationText}>See Explanation</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            )}
           </View>
         )}
 
@@ -695,7 +727,7 @@ const ExamSessionScreen = ({ examConfig, onRetakeExam }: any) => {
         </View>
   
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          <Text style={styles.resultsSubject}>{examConfig.subject} • {examConfig.examType} Exam</Text>
+          <Text style={styles.resultsSubject}>{examConfig.subject} Exam</Text>
           
           {examResults && (
             <>
@@ -748,7 +780,7 @@ const ExamSessionScreen = ({ examConfig, onRetakeExam }: any) => {
       </View>
 
       <View style={styles.reviewHeader}>
-        <Text style={styles.reviewSubject}>{examConfig.examType} • {examConfig.year} • {examConfig.difficulty}</Text>
+        <Text style={styles.reviewSubject}>{examConfig.year} • {examConfig.difficulty}</Text>
         <Text style={styles.reviewScore}>
           You scored <Text style={styles.scoreNumber}>{examResults?.correctAnswers || 0}</Text> out of <Text style={styles.totalNumber}>{examResults?.totalQuestions || 0}</Text>
         </Text>
@@ -813,9 +845,16 @@ const ExamSessionScreen = ({ examConfig, onRetakeExam }: any) => {
               <TouchableOpacity
                 style={styles.reviewSeeExplanationButton}
                 onPress={() => getSolution(question)}
+                disabled={loading}
               >
-                <MaterialCommunityIcons name="star-shooting-outline" size={16} color="#4A90E2" />
-                <Text style={styles.reviewSeeExplanationText}>See Explanation</Text>
+                {loading ? (
+                  <ActivityIndicator size="small" color="#4A90E2" />
+                ) : (
+                  <>
+                    <MaterialCommunityIcons name="star-shooting-outline" size={16} color="#4A90E2" />
+                    <Text style={styles.reviewSeeExplanationText}>See Explanation</Text>
+                  </>
+                )}
               </TouchableOpacity>
             </View>
           );
@@ -906,7 +945,15 @@ const ExamSessionScreen = ({ examConfig, onRetakeExam }: any) => {
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.closeModalButton}
-                  onPress={() => setShowSolution(false)}
+                  onPress={async () => {
+                    if (sound) {
+                      await sound.stopAsync();
+                      await sound.unloadAsync();
+                      setSound(null);
+                      setIsPlaying(false);
+                    }
+                    setShowSolution(false);
+                  }}
                 >
                   <Ionicons name="close" size={24} color="#666" />
                 </TouchableOpacity>
@@ -960,7 +1007,7 @@ export default function ExamWiseScreen() {
         <ExamTimerComponent
           timeDisplay={formatTimerDisplay(examConfig.timerDuration)}
           subject={examConfig.subject}
-          examType={examConfig.examType}
+          // examType removed as per backend requirements
           year={examConfig.year}
           difficulty={examConfig.difficulty}
           onBegin={handleTimerBegin}
@@ -983,9 +1030,10 @@ export default function ExamWiseScreen() {
 
 // Helper to format timer display (e.g., 1200s => "20:00")
 function formatTimerDisplay(seconds: number) {
+  if (isNaN(seconds) || seconds === null) return '00:00';
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
-  return `${mins}:${secs.toString().padStart(2, '0')}`;
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
 
 
@@ -1104,6 +1152,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 8,
     marginTop: 4,
+    maxHeight: 200,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -1757,6 +1806,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#000000',
     lineHeight: 24,
+    backgroundColor: '#e6ffe6',  // Light green background
+    padding: 10,
+    borderRadius: 8,
   },
   
 });

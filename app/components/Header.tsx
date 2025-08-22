@@ -3,6 +3,7 @@ import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useUIStore } from '@/store/uiStore';
 import { Image } from 'expo-image';
+import { router } from 'expo-router';
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -20,12 +21,12 @@ const Header = ({ toggleSidebar, toggleActionOverlay }: HeaderProps) => {
 
           <TouchableOpacity
             style={styles.profileButton}
-            onPress={toggleActionOverlay}
+            onPress={() => router.push('/profile')}
           >
             <View style={styles.profileIcon}>
               <Feather name="user" size={18} color="#2C3E50" />
             </View>
-            <Feather name="chevron-down" size={16} color="#2C3E50" />
+            {/* <Feather name="chevron-down" size={16} color="#2C3E50" /> */}
           </TouchableOpacity>
         </View>
   );

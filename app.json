@@ -4,7 +4,7 @@
     "slug": "SmartTextbook",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/logo-1-png.png",
+    "icon": "./assets/logo-1-png-fixed.png",
     "scheme": "edustartech",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -14,7 +14,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/logo-1-png.png",
+        "foregroundImage": "./assets/logo-1-png-fixed.png",
         "backgroundColor": "#fff"
       },
       "edgeToEdgeEnabled": true,
@@ -23,14 +23,14 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/logo-1-png.png"
+      "favicon": "./assets/logo-1-png-fixed.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/logo-1-png.png",
+          "image": "./assets/logo-1-png-fixed.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#fff"

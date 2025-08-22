@@ -27,10 +27,10 @@ const windowHeight = Dimensions.get('window').height;
 const windowWidth = Dimensions.get('window').width;
 
 export default function LoginScreen() {
-  // const [email, setEmail] = useState('classfiedu@gmail.com');
-  // const [password, setPassword] = useState('8!nibr&p$%');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('classfiedu@gmail.com');
+  const [password, setPassword] = useState('8!nibr&p$%');
+  // const [email, setEmail] = useState('');
+  // const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);

@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import {
-  Dimensions,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Dimensions,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
@@ -14,18 +14,16 @@ const { width } = Dimensions.get('window');
 type ExamTimerProps = {
   timeDisplay: string;
   subject: string;
-  examType: string;
   year: string | number;
   difficulty: string;
   onBegin: () => void;
-  duration: number;
-  onDurationChange: (minutes: number) => void;
+  duration: number | 'No Timer';
+  onDurationChange: (minutes: number | 'No Timer') => void;
 };
 
 const ExamTimerComponent = ({ 
   timeDisplay = "0:00", 
   subject, 
-  examType, 
   year, 
   difficulty, 
   onBegin,
@@ -33,13 +31,14 @@ const ExamTimerComponent = ({
   onDurationChange 
 }: ExamTimerProps) => {
   const [showDropdown, setShowDropdown] = useState(false);
-  const durations = [15, 30, 45, 60, 90, 120]; // Available durations in minutes
+  const durations = ['No Timer', 15, 30, 45, 60, 90, 120]; // Available durations in minutes
 
   const handleBegin = () => {
     if (onBegin) onBegin();
   };
 
-  const formatDuration = (mins: number) => {
+  const formatDuration = (mins: number | 'No Timer') => {
+    if (mins === 'No Timer') return 'No Timer';
     if (mins < 60) return `${mins} mins`;
     const hours = Math.floor(mins / 60);
     const minutes = mins % 60;
@@ -76,6 +75,8 @@ const ExamTimerComponent = ({
       </View>
 
       {/* Circular Timer */}
+      {
+        duration !== 'No Timer' && 
       <View style={styles.timerContainer}>
         <View style={styles.circularTimer}>
           <Svg width={200} height={200} style={styles.svg}>
@@ -107,10 +108,11 @@ const ExamTimerComponent = ({
           </View>
         </View>
       </View>
+      }
 
       {/* Subject Info */}
       <Text style={styles.subjectText}>{subject}</Text>
-      <Text style={styles.subjectDetails}>{examType} . {year} . {difficulty}</Text>
+      <Text style={styles.subjectDetails}>{year} . {difficulty}</Text>
 
       {/* Instructions */}
       <View style={styles.instructionsContainer}>

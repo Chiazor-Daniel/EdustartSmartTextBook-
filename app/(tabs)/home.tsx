@@ -32,7 +32,6 @@ export default function HomeScreen() {
    const { isHeaderVisible, isBottomNavVisible, setHeaderVisible, setBottomNavVisible } = useUIStore();
 
    useEffect(() => {
-      // Hide navigation when entering this screen
    !isHeaderVisible &&   setHeaderVisible(true);
     
     !isBottomNavVisible &&  setBottomNavVisible(true);
