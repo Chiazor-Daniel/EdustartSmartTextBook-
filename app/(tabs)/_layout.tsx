@@ -1,35 +1,68 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
+import { Stack } from 'expo-router';
+import LinearBg from '../components/LinearBg';
+import Sidebar from '../components/Sidebar';
+import ActionOverlay from '../components/ActionOverlay';
+import Header from '../components/Header';
+import BottomNavigation from '../components/BottomNav';
+import { useState } from 'react';
+import { useUIStore } from '@/store/uiStore';
+import { SafeAreaView, Platform, StatusBar, StyleSheet } from 'react-native';
 
-import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: 'white',
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+  },
+});
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+export default function RootLayout() {
+  const [sidebarVisible, setSidebarVisible] = useState(false);
+  const [actionOverlayVisible, setActionOverlayVisible] = useState(false);
+  const isBottomNavVisible = useUIStore((state) => state.isBottomNavVisible);
 
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: false,
-        tabBarButton: HapticTab,
-      }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
-        }}
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar translucent={true} backgroundColor={'transparent'} />
+      <LinearBg>
+      <Sidebar
+        isVisible={sidebarVisible}
+        onClose={() => setSidebarVisible(false)}
       />
-      <Tabs.Screen
-        name="explore"
-        options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
-        }}
+      <ActionOverlay
+        isVisible={actionOverlayVisible}
+        onClose={() => setActionOverlayVisible(false)}
       />
-    </Tabs>
+      <Header
+        toggleSidebar={() => setSidebarVisible(!sidebarVisible)}
+        toggleActionOverlay={() =>
+          setActionOverlayVisible(!actionOverlayVisible)
+        }
+      />
+
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          animation: 'fade',
+          gestureEnabled: true,
+          contentStyle: { backgroundColor: 'transparent' },
+          animationDuration: 100,
+        }}
+      >
+        <Stack.Screen name="welcome" />
+        <Stack.Screen name="home" />
+        <Stack.Screen name="performance" />
+        <Stack.Screen name="assessment-notification" />
+        <Stack.Screen name="profile" />
+        <Stack.Screen name="join-class" />
+        <Stack.Screen name="subjects-list/[subject]" />
+        <Stack.Screen name="subjects-list/[subject]/slug/[slug]" />
+        <Stack.Screen name="examwise" />
+        <Stack.Screen name="examwise/[exam]/slug/[slug]" />
+      </Stack>
+
+      {isBottomNavVisible && <BottomNavigation />}
+    </LinearBg>
+    </SafeAreaView>
   );
 }
