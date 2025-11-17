@@ -1,26 +1,24 @@
-import { useLoginMutation } from "@/services/api";
+import {
+    useCheckUserDiagnosticMutation,
+    useLoginMutation,
+} from "@/services/api";
 import { useAuthStore } from "@/store/authStore";
-import { useUIStore } from "@/store/uiStore";
 import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  Dimensions,
-  Image,
-  Keyboard,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-  Animated,
+    ActivityIndicator,
+    Dimensions,
+    Image,
+    Keyboard,
+    Platform,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from "react-native";
-import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-import { StatusBar } from "react-native";
 import { CustomAlert } from "../components/custom-alert";
 
 const windowHeight = Dimensions.get("window").height;
@@ -66,6 +64,8 @@ export default function LoginScreen() {
   }, []);
 
   const [login, { isLoading }] = useLoginMutation();
+  const [checkDiagnostic, { isLoading: isCheckingDiagnostic }] =
+    useCheckUserDiagnosticMutation();
   const { login: setAuth } = useAuthStore();
 
   const showCustomAlert = (title, message, type = "info", onConfirm = null) => {
@@ -115,15 +115,39 @@ export default function LoginScreen() {
       const response = await login({ email, password }).unwrap();
       await setAuth(response.token, response.user);
 
-      showCustomAlert(
-        "Welcome Back!",
-        "You have been successfully logged in to your account.",
-        "success",
-        () => {
-          hideAlert();
-          router.replace("/home");
-        },
-      );
+      // Check if user has completed diagnostic
+      try {
+        const diagnosticCheck = await checkDiagnostic({
+          email: response.user.email,
+        }).unwrap();
+
+        showCustomAlert(
+          "Welcome Back!",
+          "You have been successfully logged in to your account.",
+          "success",
+          () => {
+            hideAlert();
+            // Navigate based on diagnostic completion status
+            if (diagnosticCheck.has_completed_diagnostic) {
+              router.replace("/(tabs)/home");
+            } else {
+              router.replace("/(auth)/student-diagnosis");
+            }
+          },
+        );
+      } catch (diagnosticErr) {
+        // If check fails, default to diagnosis screen
+        console.error("Error checking diagnostic:", diagnosticErr);
+        showCustomAlert(
+          "Welcome Back!",
+          "You have been successfully logged in to your account.",
+          "success",
+          () => {
+            hideAlert();
+            router.replace("/(auth)/student-diagnosis");
+          },
+        );
+      }
     } catch (err) {
       console.error("Login error:", err.message || "Invalid Credentials");
 
@@ -226,9 +250,9 @@ export default function LoginScreen() {
             <TouchableOpacity
               style={styles.loginButton}
               onPress={handleLogin}
-              disabled={isLoading}
+              disabled={isLoading || isCheckingDiagnostic}
             >
-              {isLoading ? (
+              {isLoading || isCheckingDiagnostic ? (
                 <ActivityIndicator color="white" />
               ) : (
                 <Text style={styles.loginButtonText}>Login</Text>

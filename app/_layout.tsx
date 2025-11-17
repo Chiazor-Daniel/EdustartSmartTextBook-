@@ -2,9 +2,9 @@ import { useColorScheme } from "@/hooks/useColorScheme";
 import { StoreProvider } from "@/providers/StoreProvider";
 import { useAuthStore } from "@/store/authStore";
 import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
+    DarkTheme,
+    DefaultTheme,
+    ThemeProvider,
 } from "@react-navigation/native";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -47,15 +47,26 @@ export default function RootLayout() {
     if (!appIsReady) return;
 
     const inAuthGroup = segments[0] === "(auth)";
+    const isStudentDiagnosisRoute =
+      inAuthGroup && segments[1] === "student-diagnosis";
+    const isLoginRoute = inAuthGroup && segments[1] === "login";
+    const isSignupRoute = inAuthGroup && segments[1] === "signup";
 
-    if (token && user && inAuthGroup) {
-      // User is authenticated but in auth section - redirect to home
-      router.replace("/home");
-    } else if (!token && !inAuthGroup && segments[0] !== "index") {
-      // User not authenticated and not in auth section - redirect to login
-      router.replace("/(auth)/login");
+    // If user is authenticated
+    if (token && user) {
+      // If user is on login or signup page, redirect to home
+      if (isLoginRoute || isSignupRoute) {
+        router.replace("/(tabs)/home");
+      }
+      // Allow authenticated users to access student-diagnosis if they're already there
+      // Don't force redirect - let the login flow handle navigation
+    } else {
+      // User is not authenticated: ensure they are inside the auth group (login/signup).
+      if (!inAuthGroup && String(segments[0]) !== "index") {
+        router.replace("/(auth)/login");
+      }
     }
-  }, [token, user, segments, appIsReady]);
+  }, [token, user, segments, appIsReady, router]);
 
   const onLayoutRootView = useCallback(async () => {
     if (appIsReady) {
